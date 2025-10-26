@@ -5,14 +5,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 30px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
+  padding: 14px 28px;
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  backdrop-filter: blur(8px) saturate(120%);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
   position: sticky;
   top: 0;
   z-index: 1000;
-  gap: 20px;
+  gap: 18px;
 }
 
 /* ===== BRAND SECTION ===== */
@@ -32,6 +33,16 @@
   font-size: 24px;
   transition: transform 0.3s ease;
 }
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: white;
+  font-weight: 700;
+  font-size: 22px;
+  transition: transform 0.28s ease;
+}
 
 .brand-link:hover {
   transform: scale(1.05);
@@ -41,11 +52,19 @@
   font-size: 28px;
 }
 
+.brand-icon {
+  font-size: 22px;
+  background: rgba(255,255,255,0.12);
+  padding: 8px;
+  border-radius: 8px;
+}
 .brand-name {
-  background: linear-gradient(135deg, #fff, #f0f0f0);
+  background: linear-gradient(90deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  font-family: 'Great Vibes', cursive;
+  font-size: 20px;
 }
 
 /* ===== NAVIGATION LINKS ===== */
@@ -67,9 +86,18 @@
   transition: color 0.3s ease;
 }
 
+.nav-link {
+  text-decoration: none;
+  color: rgba(255,255,255,0.95);
+  font-size: 15px;
+  font-weight: 600;
+  position: relative;
+  transition: color 0.22s ease, transform 0.22s ease;
+}
 .nav-link:hover,
 .nav-link.active {
-  color: #ffd700;
+  color: #fff7b0;
+  transform: translateY(-2px);
 }
 
 /* Underline animation for active links */

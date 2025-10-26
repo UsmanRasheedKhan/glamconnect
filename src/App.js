@@ -105,14 +105,7 @@ function App() {
             Access: Protected (only logged-in users)
             Shows: Services component (all services, book via modal)
           */}
-          <Route
-            path="/services"
-            element={
-              <ProtectedRoute>
-                <Services />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/services" element={<Services />} />
 
           {/* 
             Route 4: About Us Page
@@ -120,14 +113,7 @@ function App() {
             Access: Protected (only logged-in users)
             Shows: AboutUs component (company story, team, mission)
           */}
-          <Route
-            path="/about"
-            element={
-              <ProtectedRoute>
-                <AboutUs />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/about" element={<AboutUs />} />
 
           {/* 
             Route 5: Gallery Page
@@ -135,14 +121,7 @@ function App() {
             Access: Protected (only logged-in users)
             Shows: Gallery component (photos of services, filterable by category)
           */}
-          <Route
-            path="/gallery"
-            element={
-              <ProtectedRoute>
-                <Gallery />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/gallery" element={<Gallery />} />
 
           {/* 
             Route 6: Contact Us Page
@@ -150,14 +129,7 @@ function App() {
             Access: Protected (only logged-in users)
             Shows: ContactUs component (contact form, business hours, address)
           */}
-          <Route
-            path="/contact"
-            element={
-              <ProtectedRoute>
-                <ContactUs />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/contact" element={<ContactUs />} />
 
           {/* 
             Route 7: User Profile Page

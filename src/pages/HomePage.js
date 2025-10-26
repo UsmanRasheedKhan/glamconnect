@@ -27,21 +27,25 @@ const HomePage = () => {
   return (
     <div className="home-page">
       {/* ===== HERO SECTION ===== */}
-      {/* Large banner at the top with welcome message and call-to-action */}
       <section className="hero">
-        <div className="hero-content">
-          <h1 className="hero-title">Welcome to GlamConnect</h1>
-          <p className="hero-subtitle">Your Premier Unisex Salon Experience</p>
-          <p className="hero-description">
-            Discover luxury beauty and wellness services tailored to your unique style
-          </p>
-          <button className="hero-btn" onClick={handleBrowseServices}>
-            ✨ Explore Services
-          </button>
+        {/* background visual area (image / illustration) */}
+        <div className="hero-bg" aria-hidden="true">
+          {/* currently decorative — can be replaced with an <img> or background-image */}
+          <div className="hero-visual">💇‍♀️</div>
         </div>
-        <div className="hero-image">
-          <div className="hero-placeholder">
-            💇‍♀️ 💅 💄
+
+        {/* central glass card with title and CTA */}
+        <div className="hero-card">
+          <h1 className="hero-title"><span className="script-font">Glam</span>Connect</h1>
+          <p className="hero-subtitle">Luxury Unisex Salon & Wellness</p>
+          <p className="hero-description">
+            Discover luxury beauty and wellness services tailored to your unique style.
+          </p>
+          <div className="hero-cta">
+            <button className="hero-btn" onClick={handleBrowseServices}>
+              ✨ Explore Services
+            </button>
+            <Link to="/contact" className="hero-secondary">Contact Us</Link>
           </div>
         </div>
       </section>
