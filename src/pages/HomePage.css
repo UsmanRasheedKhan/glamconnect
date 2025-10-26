@@ -1,0 +1,443 @@
+/* ===== HOME PAGE STYLING ===== */
+/* This file styles the main landing page */
+
+.home-page {
+  width: 100%;
+  min-height: 100vh;
+  background: #f9f9f9;
+}
+
+/* ===== HERO SECTION ===== */
+/* Large banner at the top with welcome message */
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 80px 40px;
+  gap: 40px;
+  min-height: 520px;
+}
+
+.hero-content {
+  flex: 1;
+  color: white;
+  max-width: 680px;
+  backdrop-filter: blur(4px);
+}
+
+.hero-title {
+  font-size: 56px;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 26px;
+  margin: 0 0 15px 0;
+  opacity: 0.9;
+}
+
+.hero-description {
+  font-size: 20px;
+  margin: 0 0 30px 0;
+  opacity: 0.8;
+  line-height: 1.6;
+}
+
+.hero-btn {
+  padding: 15px 40px;
+  font-size: 16px;
+  font-weight: bold;
+  background: linear-gradient(90deg, #ffd54a 0%, #ff8a65 100%);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.hero-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  background: #f0f0f0;
+}
+
+.hero-image {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-placeholder {
+  width: 360px;
+  height: 360px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 88px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+/* ===== FEATURED SERVICES SECTION ===== */
+/* Quick preview of popular services */
+
+.featured-services {
+  padding: 60px 40px;
+  background: white;
+}
+
+.section-title {
+  font-size: 36px;
+  font-weight: bold;
+  text-align: center;
+  margin: 0 0 50px 0;
+  color: #333;
+  position: relative;
+  padding-bottom: 20px;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 2px;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+}
+
+.service-card {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.service-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.service-icon {
+  font-size: 60px;
+  margin-bottom: 15px;
+}
+
+.service-card h3 {
+  font-size: 22px;
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.service-card p {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 20px 0;
+  line-height: 1.6;
+}
+
+.service-link {
+  display: inline-block;
+  color: #667eea;
+  text-decoration: none;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.service-link:hover {
+  color: #764ba2;
+  transform: translateX(5px);
+}
+
+/* ===== WHY CHOOSE US SECTION ===== */
+/* Highlights of what makes our salon special */
+
+.why-choose-us {
+  padding: 60px 40px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+}
+
+.benefit-card {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.benefit-card:hover {
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
+}
+
+.benefit-icon {
+  font-size: 50px;
+  margin-bottom: 15px;
+}
+
+.benefit-card h3 {
+  font-size: 20px;
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.benefit-card p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ===== TESTIMONIALS SECTION ===== */
+/* Happy customers share their experiences */
+
+.testimonials {
+  padding: 60px 40px;
+  background: white;
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.testimonial-card {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.testimonial-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.testimonial-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 22px;
+}
+
+.testimonial-name {
+  margin: 0;
+  font-weight: bold;
+  color: #333;
+  font-size: 16px;
+}
+
+.testimonial-title {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.testimonial-text {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.8;
+  margin: 0 0 15px 0;
+  font-style: italic;
+}
+
+.testimonial-rating {
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+
+/* ===== CALL TO ACTION SECTION ===== */
+/* Final push to get users to book a service */
+
+.cta-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 80px 40px;
+  text-align: center;
+  color: white;
+}
+
+.cta-content h2 {
+  font-size: 42px;
+  margin: 0 0 20px 0;
+  font-weight: bold;
+}
+
+.cta-content p {
+  font-size: 18px;
+  margin: 0 0 30px 0;
+  opacity: 0.9;
+}
+
+.cta-btn {
+  padding: 15px 50px;
+  font-size: 16px;
+  font-weight: bold;
+  background: white;
+  color: #667eea;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.cta-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  background: #f0f0f0;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+/* Make homepage mobile-friendly for small screens */
+
+@media (max-width: 768px) {
+  .hero {
+    flex-direction: column;
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .hero-title {
+    font-size: 36px;
+  }
+
+  .hero-subtitle {
+    font-size: 18px;
+  }
+
+  .hero-description {
+    font-size: 16px;
+  }
+
+  .hero-placeholder {
+    font-size: 80px;
+  }
+
+  .featured-services,
+  .why-choose-us,
+  .testimonials {
+    padding: 40px 20px;
+  }
+
+  .section-title {
+    font-size: 28px;
+  }
+
+  .services-grid,
+  .benefits-grid,
+  .testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-section {
+    padding: 60px 20px;
+  }
+
+  .cta-content h2 {
+    font-size: 32px;
+  }
+
+  .cta-content p {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 30px 15px;
+    min-height: auto;
+  }
+
+  .hero-title {
+    font-size: 28px;
+  }
+
+  .hero-subtitle {
+    font-size: 16px;
+  }
+
+  .hero-btn {
+    padding: 12px 30px;
+    font-size: 14px;
+  }
+
+  .hero-placeholder {
+    font-size: 60px;
+  }
+
+  .section-title {
+    font-size: 24px;
+  }
+
+  .featured-services,
+  .why-choose-us,
+  .testimonials {
+    padding: 30px 15px;
+  }
+
+  .service-card,
+  .benefit-card,
+  .testimonial-card {
+    padding: 20px;
+  }
+
+  .cta-section {
+    padding: 40px 15px;
+  }
+
+  .cta-content h2 {
+    font-size: 24px;
+  }
+
+  .cta-btn {
+    padding: 12px 30px;
+    font-size: 14px;
+  }
+}

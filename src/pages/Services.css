@@ -1,0 +1,472 @@
+/* ===== SERVICES PAGE STYLING ===== */
+/* This file styles the services page with grid layout and modal */
+
+.services-page {
+  width: 100%;
+  min-height: 100vh;
+  background: #f9f9f9;
+  padding-top: 20px;
+  padding-bottom: 40px;
+}
+
+/* ===== SERVICES HEADER ===== */
+/* Top section with title and description */
+
+.services-header {
+  text-align: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  margin-bottom: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+}
+
+.services-header h1 {
+  font-size: 42px;
+  margin: 0 0 10px 0;
+  font-weight: bold;
+}
+
+.services-header p {
+  font-size: 18px;
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* ===== SERVICES CONTAINER ===== */
+/* Main container for services grid */
+
+.services-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+/* ===== SERVICE ITEM ===== */
+/* Individual service card */
+
+.service-item {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.service-item:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.service-icon-large {
+  font-size: 60px;
+  margin-bottom: 15px;
+}
+
+.service-item h3 {
+  font-size: 22px;
+  margin: 0 0 10px 0;
+  color: #333;
+  font-weight: bold;
+}
+
+.service-category {
+  font-size: 13px;
+  color: #667eea;
+  font-weight: bold;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.service-description {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 15px 0;
+  line-height: 1.6;
+  min-height: 50px;
+}
+
+.service-details {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin: 15px 0;
+  padding: 15px 0;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.service-price {
+  font-size: 24px;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.service-duration {
+  font-size: 13px;
+  color: #999;
+  background: #f5f5f5;
+  padding: 5px 10px;
+  border-radius: 20px;
+}
+
+.book-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.book-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* ===== MODAL OVERLAY ===== */
+/* Background when modal is open */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===== MODAL CONTENT ===== */
+/* Main modal box */
+
+.modal-content {
+  background: white;
+  border-radius: 15px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ===== MODAL CLOSE BUTTON ===== */
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #f5f5f5;
+  border: none;
+  font-size: 24px;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: #e0e0e0;
+  transform: rotate(90deg);
+}
+
+/* ===== MODAL HEADER ===== */
+
+.modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 30px 20px;
+  text-align: center;
+  border-radius: 15px 15px 0 0;
+}
+
+.modal-icon {
+  font-size: 60px;
+  margin-bottom: 15px;
+}
+
+.modal-header h2 {
+  margin: 0 0 5px 0;
+  font-size: 28px;
+}
+
+.modal-category {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ===== MODAL BODY ===== */
+
+.modal-body {
+  padding: 30px 20px;
+}
+
+/* Service info display */
+.service-info {
+  margin-bottom: 25px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-label {
+  font-weight: bold;
+  color: #333;
+  font-size: 14px;
+}
+
+.info-value {
+  color: #666;
+  font-size: 14px;
+}
+
+.info-value.price {
+  color: #667eea;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+/* Booking form */
+.booking-form {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.booking-form h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+  font-size: 13px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* User info preview */
+.user-info {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 15px;
+  border-left: 4px solid #667eea;
+}
+
+.user-info p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #333;
+}
+
+.user-info strong {
+  color: #667eea;
+}
+
+/* ===== MODAL FOOTER ===== */
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #f0f0f0;
+  background: #f9f9f9;
+  border-radius: 0 0 15px 15px;
+}
+
+.cancel-btn,
+.confirm-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.cancel-btn:hover {
+  background: #e0e0e0;
+}
+
+.confirm-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.confirm-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+@media (max-width: 768px) {
+  .services-header {
+    padding: 30px 15px;
+  }
+
+  .services-header h1 {
+    font-size: 32px;
+  }
+
+  .services-header p {
+    font-size: 16px;
+  }
+
+  .services-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .service-item {
+    padding: 15px;
+  }
+
+  .service-icon-large {
+    font-size: 45px;
+  }
+
+  .service-item h3 {
+    font-size: 18px;
+  }
+
+  .modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .modal-header {
+    padding: 25px 15px;
+  }
+
+  .modal-icon {
+    font-size: 50px;
+  }
+
+  .modal-body {
+    padding: 20px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .services-header h1 {
+    font-size: 24px;
+  }
+
+  .services-header p {
+    font-size: 14px;
+  }
+
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    width: 98%;
+  }
+
+  .modal-close {
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+  }
+
+  .modal-header h2 {
+    font-size: 22px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .cancel-btn,
+  .confirm-btn {
+    width: 100%;
+  }
+}

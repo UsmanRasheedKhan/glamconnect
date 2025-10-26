@@ -291,6 +291,250 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* ===== MY BOOKINGS SECTION ===== */
+.bookings-section {
+  /* White background */
+  background: white;
+  
+  /* Rounded corners */
+  border-radius: 20px;
+  
+  /* Padding inside */
+  padding: 30px;
+  
+  /* Shadow */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  
+  /* Space below section */
+  margin-bottom: 30px;
+}
+
+.bookings-section h3 {
+  /* Title styling */
+  font-size: 1.3rem;
+  margin: 0 0 25px 0;
+  color: #333;
+}
+
+/* No bookings message styling */
+.no-bookings {
+  /* Center content */
+  text-align: center;
+  
+  /* Padding */
+  padding: 40px 20px;
+  
+  /* Light gray background */
+  background: #f9f9f9;
+  
+  /* Rounded corners */
+  border-radius: 12px;
+}
+
+.no-bookings p {
+  /* Message text */
+  color: #666;
+  margin-bottom: 20px;
+  font-size: 1rem;
+}
+
+/* Button to browse services */
+.btn-book-service {
+  /* Gradient background */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  
+  /* White text */
+  color: white;
+  
+  /* Padding */
+  padding: 12px 25px;
+  
+  /* Rounded corners */
+  border-radius: 8px;
+  
+  /* No border */
+  border: none;
+  
+  /* Pointer cursor */
+  cursor: pointer;
+  
+  /* Font styling */
+  font-weight: bold;
+  font-size: 1rem;
+  
+  /* Smooth transitions */
+  transition: all 0.3s ease;
+}
+
+.btn-book-service:hover {
+  /* Lift up on hover */
+  transform: translateY(-3px);
+  
+  /* Stronger shadow */
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Bookings list styling */
+.bookings-list {
+  /* Grid layout */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* Individual booking card styling */
+.booking-card {
+  /* Light background */
+  background: #f9f9f9;
+  
+  /* Padding inside */
+  padding: 20px;
+  
+  /* Rounded corners */
+  border-radius: 12px;
+  
+  /* Border accent */
+  border-left: 5px solid #667eea;
+  
+  /* Smooth transitions */
+  transition: all 0.3s ease;
+}
+
+.booking-card:hover {
+  /* Lift up on hover */
+  transform: translateY(-5px);
+  
+  /* Shadow on hover */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Booking card header with service name */
+.booking-header {
+  /* Flexbox for layout */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  /* Bottom margin */
+  margin-bottom: 15px;
+  
+  /* Padding below */
+  padding-bottom: 15px;
+  
+  /* Border bottom */
+  border-bottom: 1px solid #ddd;
+}
+
+.booking-header h4 {
+  /* Title styling */
+  font-size: 1.1rem;
+  margin: 0;
+  color: #333;
+}
+
+/* Status badge styling */
+.booking-status {
+  /* Green background for confirmed status */
+  background: #28a745;
+  
+  /* White text */
+  color: white;
+  
+  /* Padding */
+  padding: 5px 12px;
+  
+  /* Rounded corners */
+  border-radius: 20px;
+  
+  /* Small font */
+  font-size: 0.75rem;
+  
+  /* Font weight */
+  font-weight: bold;
+}
+
+/* Booking details grid */
+.booking-details {
+  /* 2-column grid on desktop */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  
+  /* Bottom margin */
+  margin-bottom: 15px;
+}
+
+/* Individual detail item */
+.detail-item {
+  /* Flexbox vertical layout */
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.detail-item label {
+  /* Label styling */
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: #667eea;
+}
+
+.detail-item span {
+  /* Value styling */
+  color: #333;
+  font-size: 0.95rem;
+}
+
+/* Price styling */
+.detail-item .price {
+  /* Larger price display */
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #28a745;
+}
+
+/* Cancel button in booking card */
+.btn-cancel {
+  /* Red background */
+  background: #ffebee;
+  
+  /* Red text */
+  color: #e74c3c;
+  
+  /* Full width */
+  width: 100%;
+  
+  /* Padding */
+  padding: 10px;
+  
+  /* Rounded corners */
+  border-radius: 8px;
+  
+  /* No border */
+  border: none;
+  
+  /* Pointer cursor */
+  cursor: pointer;
+  
+  /* Font styling */
+  font-weight: bold;
+  font-size: 0.9rem;
+  
+  /* Smooth transitions */
+  transition: all 0.3s ease;
+}
+
+.btn-cancel:hover {
+  /* Red background on hover */
+  background: #e74c3c;
+  
+  /* White text on hover */
+  color: white;
+  
+  /* Lift up on hover */
+  transform: translateY(-2px);
+}
+
 /* ===== QUICK STATS SECTION ===== */
 .quick-stats {
   /* White background */
@@ -497,5 +741,15 @@
     /* Stack label and value vertically on mobile */
     flex-direction: column;
     gap: 5px;
+  }
+
+  /* Bookings section - single column on mobile */
+  .bookings-list {
+    grid-template-columns: 1fr;
+  }
+
+  /* Booking details - stack vertically on mobile */
+  .booking-details {
+    grid-template-columns: 1fr;
   }
 }

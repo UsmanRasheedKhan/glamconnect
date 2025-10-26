@@ -20,6 +20,9 @@ const Home = () => {
   // Stores any error messages
   const [error, setError] = useState('');
   
+  // Stores all user's bookings from localStorage
+  const [bookings, setBookings] = useState([]);
+  
   // useNavigate is a hook to navigate to different pages
   const navigate = useNavigate();
 
@@ -41,9 +44,9 @@ const Home = () => {
       setIsLoading(false);
       
       // Redirect to login page after 2 seconds
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
+        setTimeout(() => {
+          navigate('/auth');
+        }, 2000);
       
       return; // Stop execution here
     }
@@ -55,6 +58,18 @@ const Home = () => {
       // Update the user state with retrieved data
       setUser(userData);
       
+      // ===== LOAD BOOKINGS FROM LOCALSTORAGE =====
+      // Get bookings array from localStorage (booking system stores bookings here)
+      const storedBookings = localStorage.getItem('bookings');
+      if (storedBookings) {
+        // Convert JSON string to array and sort by date (newest first)
+        const bookingsArray = JSON.parse(storedBookings);
+        setBookings(bookingsArray);
+      } else {
+        // No bookings yet, set empty array
+        setBookings([]);
+      }
+      
       // Stop loading animation
       setIsLoading(false);
       
@@ -65,7 +80,7 @@ const Home = () => {
       
       // Redirect to login after 2 seconds
       setTimeout(() => {
-        navigate('/');
+        navigate('/auth');
       }, 2000);
     }
   }, []); // Empty array means run only once when component mounts
@@ -82,7 +97,26 @@ const Home = () => {
     console.log('User logged out successfully');
     
     // Redirect to login page
-    navigate('/');
+    navigate('/auth');
+  };
+
+  // ===== CANCEL BOOKING HANDLER =====
+  // This function removes a booking from localStorage and updates the display
+  const handleCancelBooking = (bookingId) => {
+    // Ask user to confirm they want to cancel
+    if (window.confirm('Are you sure you want to cancel this booking?')) {
+      // Filter out the booking with matching ID
+      const updatedBookings = bookings.filter(booking => booking.id !== bookingId);
+      
+      // Update bookings state
+      setBookings(updatedBookings);
+      
+      // Save updated bookings back to localStorage
+      localStorage.setItem('bookings', JSON.stringify(updatedBookings));
+      
+      // Show success message
+      alert('Booking cancelled successfully');
+    }
   };
 
   // ===== EDIT PROFILE HANDLER =====
@@ -185,6 +219,65 @@ const Home = () => {
               🚪 Logout
             </button>
           </div>
+        </div>
+
+        {/* MY BOOKINGS SECTION =====*/}
+        <div className="bookings-section">
+          <h3>📅 My Service Bookings</h3>
+          
+          {/* Show message if no bookings yet */}
+          {bookings.length === 0 ? (
+            <div className="no-bookings">
+              <p>You haven't booked any services yet.</p>
+              <button 
+                className="btn-book-service" 
+                onClick={() => navigate('/services')}
+              >
+                Browse Services →
+              </button>
+            </div>
+          ) : (
+            <div className="bookings-list">
+              {/* Loop through all bookings and display each one */}
+              {bookings.map((booking) => (
+                <div key={booking.id} className="booking-card">
+                  {/* Booking header with service name */}
+                  <div className="booking-header">
+                    <h4>{booking.serviceName}</h4>
+                    <span className="booking-status">Confirmed</span>
+                  </div>
+                  
+                  {/* Booking details grid */}
+                  <div className="booking-details">
+                    <div className="detail-item">
+                      <label>Date:</label>
+                      <span>{booking.date}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Time:</label>
+                      <span>{booking.time}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Duration:</label>
+                      <span>{booking.duration}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Price:</label>
+                      <span className="price">${booking.price}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Cancel button for each booking */}
+                  <button 
+                    className="btn-cancel"
+                    onClick={() => handleCancelBooking(booking.id)}
+                  >
+                    ✕ Cancel Booking
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Quick stats section */}

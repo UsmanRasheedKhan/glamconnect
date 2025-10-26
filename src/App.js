@@ -4,6 +4,15 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Auth from './screens/Auth';
 import Home from './screens/Home';
 
+// ===== IMPORT ALL PAGE COMPONENTS =====
+// These are the new pages for the website
+import Navbar from './components/Navbar';
+import HomePage from './pages/HomePage';
+import Services from './pages/Services';
+import AboutUs from './pages/AboutUs';
+import Gallery from './pages/Gallery';
+import ContactUs from './pages/ContactUs';
+
 // ===== APP COMPONENT =====
 // This is the main app component that handles routing (page navigation)
 // Think of it as the "traffic controller" that decides which page to show
@@ -26,7 +35,7 @@ function App() {
     // Check if user is logged in
     if (!isLoggedIn()) {
       // If not logged in, redirect to login page
-      return <Navigate to="/" replace />;
+      return <Navigate to="/auth" replace />;
     }
     // If logged in, show the page
     return children;
@@ -50,6 +59,9 @@ function App() {
     // BrowserRouter enables routing in the app
     <Router>
       <div className="App">
+        {/* Navbar: always show global navigation (home is public landing) */}
+        <Navbar />
+
         {/* Routes: Set up all the pages and their paths */}
         <Routes>
           {/* 
@@ -57,9 +69,14 @@ function App() {
             Path: "/" (the root/home URL)
             Access: Public (anyone can see)
             Shows: Auth component (login/signup forms)
+            Note: Navbar NOT shown on this page
           */}
+          {/* Public landing page */}
+          <Route path="/" element={<HomePage />} />
+
+          {/* Auth (login/signup) moved to /auth so landing stays public */}
           <Route
-            path="/"
+            path="/auth"
             element={
               <PublicRoute>
                 <Auth />
@@ -68,14 +85,88 @@ function App() {
           />
 
           {/* 
-            Route 2: Home/Dashboard Page
+            Route 2: Main Home/Landing Page (after login)
             Path: "/home"
             Access: Protected (only logged-in users)
-            Shows: Home component (user profile, dashboard)
-            If not logged in: redirects to "/"
+            Shows: HomePage component (welcome, featured services, testimonials)
           */}
           <Route
             path="/home"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 
+            Route 3: Services Page with Booking
+            Path: "/services"
+            Access: Protected (only logged-in users)
+            Shows: Services component (all services, book via modal)
+          */}
+          <Route
+            path="/services"
+            element={
+              <ProtectedRoute>
+                <Services />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 
+            Route 4: About Us Page
+            Path: "/about"
+            Access: Protected (only logged-in users)
+            Shows: AboutUs component (company story, team, mission)
+          */}
+          <Route
+            path="/about"
+            element={
+              <ProtectedRoute>
+                <AboutUs />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 
+            Route 5: Gallery Page
+            Path: "/gallery"
+            Access: Protected (only logged-in users)
+            Shows: Gallery component (photos of services, filterable by category)
+          */}
+          <Route
+            path="/gallery"
+            element={
+              <ProtectedRoute>
+                <Gallery />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 
+            Route 6: Contact Us Page
+            Path: "/contact"
+            Access: Protected (only logged-in users)
+            Shows: ContactUs component (contact form, business hours, address)
+          */}
+          <Route
+            path="/contact"
+            element={
+              <ProtectedRoute>
+                <ContactUs />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 
+            Route 7: User Profile Page
+            Path: "/profile"
+            Access: Protected (only logged-in users)
+            Shows: Home component (user profile, my bookings, edit profile)
+          */}
+          <Route
+            path="/profile"
             element={
               <ProtectedRoute>
                 <Home />
@@ -84,9 +175,9 @@ function App() {
           />
 
           {/* 
-            Route 3: Fallback for unknown URLs
+            Route 8: Fallback for unknown URLs
             Path: "*" (any path not matching above)
-            Action: Redirect to home page
+            Action: Redirect to "/" (login page)
             This prevents blank pages if user goes to wrong URL
           */}
           <Route path="*" element={<Navigate to="/" replace />} />
