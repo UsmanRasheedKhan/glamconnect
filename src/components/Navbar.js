@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Navbar.css';
 
@@ -8,7 +8,7 @@ import './Navbar.css';
 
 const Navbar = () => {
   // Track if user is logged in by checking localStorage for token
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token') || !!localStorage.getItem('adminToken'));
   
   // Get user data from localStorage
   const [user, setUser] = useState(
@@ -27,11 +27,21 @@ const Navbar = () => {
   // Get current page location
   const location = useLocation();
 
+  // Keep navbar state in sync with localStorage (when user logs in/out)
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem('token') || !!localStorage.getItem('adminToken'));
+    setUser(localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null);
+    // close dropdown on route change
+    setShowDropdown(false);
+    setShowMobileMenu(false);
+  }, [location]);
+
   // ===== HANDLE LOGOUT =====
   // When user clicks logout, clear localStorage and redirect to home
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('adminToken');
     setIsLoggedIn(false);
     setUser(null);
     setShowDropdown(false);

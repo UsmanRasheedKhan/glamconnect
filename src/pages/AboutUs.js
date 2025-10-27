@@ -96,25 +96,25 @@ const AboutUs = () => {
         <div className="team-grid">
           <div className="team-member">
             <div className="member-avatar">👩‍🦰</div>
-            <h3>Sarah Wilson</h3>
+            <h3>Nadeem William</h3>
             <p className="member-role">Head Stylist</p>
             <p className="member-bio">10+ years of experience in hair styling and coloring</p>
           </div>
           <div className="team-member">
             <div className="member-avatar">👨‍💼</div>
-            <h3>Mike Johnson</h3>
+            <h3>Sumbul Ahmed</h3>
             <p className="member-role">Makeup Artist</p>
             <p className="member-bio">Specialist in bridal and special occasion makeup</p>
           </div>
           <div className="team-member">
             <div className="member-avatar">👩‍⚕️</div>
-            <h3>Emma Davis</h3>
+            <h3>Anees Aslam</h3>
             <p className="member-role">Skincare Specialist</p>
             <p className="member-bio">Expert in facial treatments and skincare solutions</p>
           </div>
           <div className="team-member">
             <div className="member-avatar">🧖‍♀️</div>
-            <h3>Lisa Anderson</h3>
+            <h3>Marium Akhter</h3>
             <p className="member-role">Massage Therapist</p>
             <p className="member-bio">Certified massage therapist with 8+ years experience</p>
           </div>

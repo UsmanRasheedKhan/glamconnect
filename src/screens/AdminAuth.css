@@ -1,0 +1,18 @@
+.admin-auth-page {
+  min-height: 60vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:3rem 1rem;
+}
+.admin-auth-card { width:100%; max-width:480px; padding:2rem; border-radius:14px; }
+.admin-auth-card h2 { margin-bottom:0.25rem; }
+.admin-auth-card .muted { color: rgba(255,255,255,0.8); margin-bottom:1rem; }
+.admin-form .form-group { margin-bottom:1rem; text-align:left; }
+.admin-form label { display:block; margin-bottom:0.4rem; }
+.admin-auth-card { color: #111; }
+.admin-form input { width:100%; padding:10px; border-radius:8px; border:1px solid rgba(0,0,0,0.12); background: #fff; color:#111; caret-color: #111; }
+.admin-form input::placeholder { color: rgba(0,0,0,0.45); }
+.admin-form input:focus { outline: none; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.16); }
+.admin-form .error { color:#a10000; background: rgba(255,200,200,0.8); padding:8px; border-radius:6px; margin-bottom:8px; }
+.admin-form .error { color:#ffd2d2; background: rgba(255,0,0,0.06); padding:8px; border-radius:6px; margin-bottom:8px; }

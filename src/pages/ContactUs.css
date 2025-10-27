@@ -4,17 +4,20 @@
 .contact-page {
   width: 100%;
   min-height: 100vh;
-  background: #f9f9f9;
+  background: transparent;
+  padding: 3rem 0;
 }
 
 /* ===== CONTACT HEADER ===== */
 .contact-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, rgba(102,126,234,0.95) 0%, rgba(118,75,162,0.95) 100%);
   color: white;
   text-align: center;
-  padding: 60px 20px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  padding: 40px 20px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+  max-width: 1200px;
+  margin: 1.5rem auto;
 }
 
 .contact-header h1 {
@@ -34,17 +37,19 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 40px;
-  padding: 60px 40px;
+  padding: 40px 20px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
 /* ===== CONTACT FORM SECTION ===== */
 .contact-form-section {
-  background: white;
+  background: rgba(255,255,255,0.06);
   padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(31,38,135,0.08);
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(6px);
 }
 
 .contact-form-section h2 {
@@ -143,11 +148,12 @@
 
 /* Info card styling (address, phone, email, hours) */
 .info-card {
-  background: white;
+  background: rgba(255,255,255,0.06);
   padding: 30px;
   border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(31,38,135,0.08);
   transition: all 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .info-card:hover {
@@ -217,10 +223,14 @@
 
 /* ===== MAP SECTION ===== */
 .map-section {
-  background: white;
-  padding: 60px 40px;
+  background: rgba(255,255,255,0.03);
+  padding: 40px 20px;
   text-align: center;
   margin-top: 40px;
+  border-radius: 12px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .map-section h2 {

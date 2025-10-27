@@ -4,7 +4,8 @@
 .about-us-page {
   width: 100%;
   min-height: 100vh;
-  background: #f9f9f9;
+  background: transparent; /* match app gradient background */
+  padding: 4rem 0;
 }
 
 /* ===== HEADER SECTION ===== */
@@ -30,7 +31,11 @@
 /* ===== OUR STORY SECTION ===== */
 .our-story {
   padding: 60px 40px;
-  background: white;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(8px);
+  border-radius: 18px;
+  margin: 1.5rem auto;
+  max-width: 1200px;
 }
 
 .story-content {
@@ -78,7 +83,10 @@
 /* ===== MISSION & VISION SECTION ===== */
 .mission-vision {
   padding: 60px 40px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: rgba(255,255,255,0.04);
+  margin: 1.5rem auto;
+  border-radius: 18px;
+  max-width: 1200px;
 }
 
 .mission-vision h2 {
@@ -97,12 +105,14 @@
 }
 
 .mission-card {
-  background: white;
+  background: rgba(255,255,255,0.06);
   padding: 40px;
   border-radius: 12px;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(31,38,135,0.06);
   transition: all 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(6px);
 }
 
 .mission-card:hover {
@@ -131,7 +141,10 @@
 /* ===== OUR VALUES SECTION ===== */
 .our-values {
   padding: 60px 40px;
-  background: white;
+  background: rgba(255,255,255,0.04);
+  margin: 1.5rem auto;
+  border-radius: 18px;
+  max-width: 1200px;
 }
 
 .our-values h2 {
@@ -150,11 +163,13 @@
 }
 
 .value-card {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: rgba(255,255,255,0.05);
   padding: 30px;
   border-radius: 12px;
   text-align: center;
   transition: all 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(6px);
 }
 
 .value-card:hover {
@@ -182,7 +197,10 @@
 /* ===== OUR TEAM SECTION ===== */
 .our-team {
   padding: 60px 40px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: rgba(255,255,255,0.04);
+  margin: 1.5rem auto;
+  border-radius: 18px;
+  max-width: 1200px;
 }
 
 .our-team h2 {
@@ -208,12 +226,14 @@
 }
 
 .team-member {
-  background: white;
+  background: rgba(255,255,255,0.05);
   padding: 30px;
   border-radius: 12px;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(31,38,135,0.06);
   transition: all 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.04);
+  backdrop-filter: blur(6px);
 }
 
 .team-member:hover {
@@ -249,7 +269,10 @@
 /* ===== WHY CHOOSE US SECTION ===== */
 .why-choose-section {
   padding: 60px 40px;
-  background: white;
+  background: rgba(255,255,255,0.03);
+  margin: 1.5rem auto;
+  border-radius: 18px;
+  max-width: 1200px;
 }
 
 .why-choose-section h2 {
@@ -270,13 +293,14 @@
 .reason {
   padding: 30px;
   border-left: 4px solid #667eea;
-  background: #f9f9f9;
+  background: rgba(255,255,255,0.04);
   border-radius: 8px;
   transition: all 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.04);
 }
 
 .reason:hover {
-  background: #f0f0f0;
+  background: rgba(255,255,255,0.06);
   border-left-color: #764ba2;
 }
 

@@ -37,7 +37,7 @@ const Services = () => {
       id: 1,
       name: 'Basic Haircut',
       category: 'Hair',
-      price: 30,
+      price: 300,
       duration: '30 mins',
       description: 'Professional haircut with basic styling',
       icon: '✂️',
@@ -46,7 +46,7 @@ const Services = () => {
       id: 2,
       name: 'Hair Coloring',
       category: 'Hair',
-      price: 75,
+      price: 750,
       duration: '2 hours',
       description: 'Full hair color with premium products',
       icon: '🎨',
@@ -55,7 +55,7 @@ const Services = () => {
       id: 3,
       name: 'Hair Styling',
       category: 'Hair',
-      price: 50,
+      price: 500,
       duration: '1 hour',
       description: 'Professional styling for special occasions',
       icon: '💇‍♀️',
@@ -64,7 +64,7 @@ const Services = () => {
       id: 4,
       name: 'Manicure',
       category: 'Nails',
-      price: 25,
+      price: 1000,
       duration: '45 mins',
       description: 'Professional manicure with nail art options',
       icon: '💅',
@@ -73,7 +73,7 @@ const Services = () => {
       id: 5,
       name: 'Pedicure',
       category: 'Nails',
-      price: 30,
+      price: 2500,
       duration: '1 hour',
       description: 'Relaxing pedicure with spa treatment',
       icon: '👣',
@@ -82,7 +82,7 @@ const Services = () => {
       id: 6,
       name: 'Nail Art Design',
       category: 'Nails',
-      price: 40,
+      price: 2500,
       duration: '1 hour',
       description: 'Custom nail art design with premium finishes',
       icon: '✨',
@@ -91,7 +91,7 @@ const Services = () => {
       id: 7,
       name: 'Makeup Application',
       category: 'Makeup',
-      price: 60,
+      price: 4000,
       duration: '1 hour',
       description: 'Professional makeup for any occasion',
       icon: '💄',
@@ -100,7 +100,7 @@ const Services = () => {
       id: 8,
       name: 'Bridal Makeup',
       category: 'Makeup',
-      price: 120,
+      price: 12000,
       duration: '2 hours',
       description: 'Complete bridal makeup package with trials',
       icon: '👰',
@@ -109,7 +109,7 @@ const Services = () => {
       id: 9,
       name: 'Facial Treatment',
       category: 'Facials',
-      price: 55,
+      price: 5500,
       duration: '1 hour',
       description: 'Professional facial with premium skincare',
       icon: '🧖‍♀️',
@@ -118,7 +118,7 @@ const Services = () => {
       id: 10,
       name: 'Deep Cleansing Facial',
       category: 'Facials',
-      price: 75,
+      price: 3000,
       duration: '1.5 hours',
       description: 'Deep cleanse with extractions and mask',
       icon: '✨',
@@ -127,7 +127,7 @@ const Services = () => {
       id: 11,
       name: 'Full Body Massage',
       category: 'Massage',
-      price: 80,
+      price: 6000,
       duration: '1 hour',
       description: 'Relaxing full body massage with oils',
       icon: '💆‍♂️',
@@ -136,7 +136,7 @@ const Services = () => {
       id: 12,
       name: 'Head & Neck Massage',
       category: 'Massage',
-      price: 45,
+      price: 1500,
       duration: '45 mins',
       description: 'Therapeutic head and neck massage',
       icon: '🧘‍♀️',
@@ -231,7 +231,7 @@ const Services = () => {
               <p className="service-category">{service.category}</p>
               <p className="service-description">{service.description}</p>
               <div className="service-details">
-                <span className="service-price">${service.price}</span>
+                <span className="service-price">Rs {service.price}</span>
                 <span className="service-duration">{service.duration}</span>
               </div>
               <button className="book-btn">Book Now</button>
@@ -272,7 +272,7 @@ const Services = () => {
                 </div>
                 <div className="info-row">
                   <span className="info-label">Price:</span>
-                  <span className="info-value price">${selectedService.price}</span>
+                  <span className="info-value price">Rs {selectedService.price}</span>
                 </div>
               </div>
 

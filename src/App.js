@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Auth from './screens/Auth';
 import Home from './screens/Home';
+import AdminAuth from './screens/AdminAuth';
 
 // ===== IMPORT ALL PAGE COMPONENTS =====
 // These are the new pages for the website
@@ -12,6 +13,8 @@ import Services from './pages/Services';
 import AboutUs from './pages/AboutUs';
 import Gallery from './pages/Gallery';
 import ContactUs from './pages/ContactUs';
+import Profile from './pages/Profile';
+import AdminDashboard from './pages/AdminDashboard';
 
 // ===== APP COMPONENT =====
 // This is the main app component that handles routing (page navigation)
@@ -38,6 +41,13 @@ function App() {
       return <Navigate to="/auth" replace />;
     }
     // If logged in, show the page
+    return children;
+  };
+
+  // ===== ADMIN PROTECTED ROUTE =====
+  const AdminProtectedRoute = ({ children }) => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) return <Navigate to="/admin-auth" replace />;
     return children;
   };
 
@@ -141,8 +151,19 @@ function App() {
             path="/profile"
             element={
               <ProtectedRoute>
-                <Home />
+                <Profile />
               </ProtectedRoute>
+            }
+          />
+
+          {/* Admin routes */}
+          <Route path="/admin-auth" element={<AdminAuth />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminProtectedRoute>
+                <AdminDashboard />
+              </AdminProtectedRoute>
             }
           />
 

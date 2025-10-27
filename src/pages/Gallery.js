@@ -6,24 +6,24 @@ import './Gallery.css';
 // Shows before/after transformations and team photos
 
 const Gallery = () => {
-  // Hardcoded gallery images with categories
+  // Hardcoded gallery items (we'll use placeholder image URLs so heights vary for an unordered/masonry look)
   const galleryItems = [
-    { id: 1, category: 'Hair', title: 'Modern Haircut', emoji: '✂️' },
-    { id: 2, category: 'Hair', title: 'Color Treatment', emoji: '🎨' },
-    { id: 3, category: 'Hair', title: 'Styling', emoji: '💇‍♀️' },
-    { id: 4, category: 'Hair', title: 'Hair Extensions', emoji: '✨' },
-    { id: 5, category: 'Nails', title: 'Manicure Design', emoji: '💅' },
-    { id: 6, category: 'Nails', title: 'Pedicure Art', emoji: '👣' },
-    { id: 7, category: 'Nails', title: 'Nail Art', emoji: '🎨' },
-    { id: 8, category: 'Nails', title: 'Gel Nails', emoji: '✨' },
-    { id: 9, category: 'Makeup', title: 'Bridal Makeup', emoji: '👰' },
-    { id: 10, category: 'Makeup', title: 'Party Makeup', emoji: '💄' },
-    { id: 11, category: 'Makeup', title: 'Makeup Artist', emoji: '🎭' },
-    { id: 12, category: 'Makeup', title: 'Eye Makeup', emoji: '👁️' },
-    { id: 13, category: 'Facials', title: 'Facial Treatment', emoji: '🧖‍♀️' },
-    { id: 14, category: 'Facials', title: 'Skin Glow', emoji: '✨' },
-    { id: 15, category: 'Facials', title: 'Spa Facial', emoji: '💆‍♀️' },
-    { id: 16, category: 'Massage', title: 'Relaxation Massage', emoji: '💆‍♂️' },
+    { id: 1, category: 'Hair', title: 'Modern Haircut' },
+    { id: 2, category: 'Hair', title: 'Color Treatment' },
+    { id: 3, category: 'Hair', title: 'Styling' },
+    { id: 4, category: 'Hair', title: 'Hair Extensions' },
+    { id: 5, category: 'Nails', title: 'Manicure Design' },
+    { id: 6, category: 'Nails', title: 'Pedicure Art' },
+    { id: 7, category: 'Nails', title: 'Nail Art' },
+    { id: 8, category: 'Nails', title: 'Gel Nails' },
+    { id: 9, category: 'Makeup', title: 'Bridal Makeup' },
+    { id: 10, category: 'Makeup', title: 'Party Makeup' },
+    { id: 11, category: 'Makeup', title: 'Makeup Artist' },
+    { id: 12, category: 'Makeup', title: 'Eye Makeup' },
+    { id: 13, category: 'Facials', title: 'Facial Treatment' },
+    { id: 14, category: 'Facials', title: 'Skin Glow' },
+    { id: 15, category: 'Facials', title: 'Spa Facial' },
+    { id: 16, category: 'Massage', title: 'Relaxation Massage' },
   ];
 
   // State for filter
@@ -60,21 +60,25 @@ const Gallery = () => {
 
       {/* Gallery grid */}
       <div className="gallery-container">
+        {/* Masonry-like unordered grid using CSS columns */}
         <div className="gallery-grid">
-          {filteredItems.map((item) => (
-            <div 
-              key={item.id} 
-              className="gallery-item"
-            >
-              <div className="gallery-image">
-                <span>{item.emoji}</span>
+          {filteredItems.map((item) => {
+            // use picsum.photos seed to get placeholder images with varying heights
+            const imgUrl = `https://picsum.photos/seed/glam-${item.id}/600/${350 + (item.id % 5) * 80}`;
+            return (
+              <div key={item.id} className="gallery-item">
+                <div
+                  className="gallery-image"
+                  style={{ backgroundImage: `url(${imgUrl})` }}
+                  aria-label={item.title}
+                />
+                <div className="gallery-info">
+                  <p className="gallery-category">{item.category}</p>
+                  <h3>{item.title}</h3>
+                </div>
               </div>
-              <div className="gallery-info">
-                <p className="gallery-category">{item.category}</p>
-                <h3>{item.title}</h3>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

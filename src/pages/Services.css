@@ -4,7 +4,7 @@
 .services-page {
   width: 100%;
   min-height: 100vh;
-  background: #f9f9f9;
+  background: transparent;
   padding-top: 20px;
   padding-bottom: 40px;
 }
@@ -15,11 +15,12 @@
 .services-header {
   text-align: center;
   padding: 40px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, rgba(102,126,234,0.9) 0%, rgba(118,75,162,0.9) 100%);
   color: white;
-  margin-bottom: 40px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  margin: 2rem auto 1.5rem auto;
+  border-radius: 18px;
+  max-width: 1200px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.18);
 }
 
 .services-header h1 {
@@ -53,13 +54,15 @@
 /* Individual service card */
 
 .service-item {
-  background: white;
-  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 16px;
   padding: 25px;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(31,38,135,0.12);
   transition: all 0.3s ease;
   cursor: pointer;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.08);
 }
 
 .service-item:hover {
@@ -168,15 +171,20 @@
 /* Main modal box */
 
 .modal-content {
-  background: white;
+  /* make the modal card more readable while keeping soft glass look */
+  background: rgba(255,255,255,0.94); /* nearly opaque for strong contrast */
+  color: #111;
   border-radius: 15px;
-  max-width: 500px;
-  width: 90%;
+  max-width: 650px;
+  width: 92%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.25);
+  animation: slideUp 0.28s ease;
   position: relative;
+  border: 1px solid rgba(0,0,0,0.08);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 
 @keyframes slideUp {
@@ -219,7 +227,7 @@
 .modal-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 30px 20px;
+  padding: 26px 20px;
   text-align: center;
   border-radius: 15px 15px 0 0;
 }
@@ -280,14 +288,16 @@
 
 /* Booking form */
 .booking-form {
-  background: #f9f9f9;
+  background: #ffffff; /* solid white for form readability */
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
 }
 
 .booking-form h3 {
-  margin: 0 0 20px 0;
-  color: #333;
+  margin: 0 0 18px 0;
+  color: #111;
   font-size: 16px;
 }
 
@@ -306,40 +316,45 @@
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 10px;
   font-size: 14px;
   font-family: inherit;
-  transition: all 0.3s ease;
+  transition: all 0.18s ease;
   box-sizing: border-box;
+  background: #fff;
+  color: #111;
 }
 
+.form-group input::placeholder { color: rgba(0,0,0,0.45); }
+.form-group select { appearance: none; }
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: rgba(102,126,234,0.9);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.12);
 }
 
 /* User info preview */
 .user-info {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
+  background: #f7f9fc;
+  padding: 14px;
+  border-radius: 10px;
   margin-top: 15px;
   border-left: 4px solid #667eea;
+  border: 1px solid rgba(0,0,0,0.04);
 }
 
 .user-info p {
   margin: 0;
   font-size: 13px;
-  line-height: 1.8;
-  color: #333;
+  line-height: 1.6;
+  color: #111;
 }
 
 .user-info strong {
-  color: #667eea;
+  color: #2b6cb0;
 }
 
 /* ===== MODAL FOOTER ===== */
@@ -347,9 +362,9 @@
 .modal-footer {
   display: flex;
   gap: 10px;
-  padding: 20px;
-  border-top: 1px solid #f0f0f0;
-  background: #f9f9f9;
+  padding: 18px;
+  border-top: 1px solid rgba(0,0,0,0.04);
+  background: transparent;
   border-radius: 0 0 15px 15px;
 }
 
