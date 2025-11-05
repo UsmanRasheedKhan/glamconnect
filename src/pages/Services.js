@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from '../api/axiosConfig';
 import './Services.css';
 
 // ===== SERVICES PAGE COMPONENT =====
@@ -28,6 +29,7 @@ const Services = () => {
   const [bookingData, setBookingData] = useState({
     date: '',
     time: '',
+    notes: '',
   });
 
   // ===== HARDCODED SERVICES DATA =====
@@ -158,42 +160,43 @@ const Services = () => {
 
   // ===== HANDLE BOOKING =====
   // When user clicks book in modal, save booking to localStorage
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!bookingData.date || !bookingData.time) {
       alert('Please select both date and time');
       return;
     }
+    // call backend API to create booking
+    try {
+      const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+      if (!user || !user.userID) {
+        alert('User not identified. Please login again.');
+        return;
+      }
 
-    // Get existing bookings from localStorage
-    let bookings = localStorage.getItem('bookings')
-      ? JSON.parse(localStorage.getItem('bookings'))
-      : [];
+      const payload = {
+        action: 'createBooking',
+        userID: user.userID,
+        serviceId: selectedService.id,
+        date: bookingData.date,
+        time: bookingData.time,
+        notes: bookingData.notes || ''
+      };
 
-    // Create new booking object
-    const newBooking = {
-      id: Date.now(), // Unique ID based on timestamp
-      serviceId: selectedService.id,
-      serviceName: selectedService.name,
-      price: selectedService.price,
-      date: bookingData.date,
-      time: bookingData.time,
-      duration: selectedService.duration,
-      bookedAt: new Date().toLocaleDateString(),
-    };
-
-    // Add booking to array
-    bookings.push(newBooking);
-
-    // Save back to localStorage
-    localStorage.setItem('bookings', JSON.stringify(bookings));
-
-    // Show success message
-    alert(`✅ Booking confirmed! Service: ${selectedService.name} on ${bookingData.date} at ${bookingData.time}`);
-
-    // Reset modal
-    setShowModal(false);
-    setBookingData({ date: '', time: '' });
-    setSelectedService(null);
+      const resp = await axios.post('', payload);
+      if (resp.data && resp.data.success) {
+        alert(`✅ Booking confirmed! Service: ${selectedService.name} on ${bookingData.date} at ${bookingData.time}`);
+        setShowModal(false);
+        setBookingData({ date: '', time: '', notes: '' });
+        setSelectedService(null);
+      } else {
+        console.error('Booking API error response:', resp.data);
+        alert('Error creating booking: ' + (resp.data?.message || 'Unknown'));
+      }
+    } catch (err) {
+      console.error('Booking request failed', err.response?.data || err.message || err);
+      const serverMsg = err.response?.data?.message;
+      alert('Network or server error while creating booking' + (serverMsg ? (': ' + serverMsg) : ''));
+    }
   };
 
   // ===== GET AVAILABLE TIMES =====
@@ -315,10 +318,25 @@ const Services = () => {
                   </select>
                 </div>
 
+                {/* Notes input */}
+                <div className="form-group">
+                  <label htmlFor="booking-notes">Notes (optional):</label>
+                  <textarea
+                    id="booking-notes"
+                    placeholder="Any preferences or notes for your appointment"
+                    value={bookingData.notes}
+                    onChange={(e) => setBookingData({ ...bookingData, notes: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+
                 {/* User info preview */}
                 <div className="user-info">
                   <p><strong>Booking for:</strong> {user?.name}</p>
                   <p><strong>Email:</strong> {user?.email}</p>
+                  {bookingData.notes && (
+                    <p><strong>Notes:</strong> {bookingData.notes}</p>
+                  )}
                 </div>
               </div>
             </div>

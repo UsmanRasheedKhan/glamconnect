@@ -18,20 +18,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'config.php';
 
+// Debug mode: when true, API will include DB error messages in responses (development only)
+$DEBUG = true;
+
+/**
+ * Helper: check if a column exists in a table
+ */
+function columnExists($conn, $table, $column) {
+    $safeTable = $conn->real_escape_string($table);
+    $safeColumn = $conn->real_escape_string($column);
+    $res = $conn->query("SHOW COLUMNS FROM `{$safeTable}` LIKE '{$safeColumn}'");
+    return ($res && $res->num_rows > 0);
+}
+
 // Get request body
 $input = json_decode(file_get_contents('php://input'), true);
 $action = $input['action'] ?? null;
 
 try {
     switch ($action) {
+        case 'createBooking':
+            handleCreateBooking($input);
+            break;
+        case 'getBookings':
+            handleGetBookings($input);
+            break;
+        case 'updateBooking':
+            handleUpdateBooking($input);
+            break;
+        case 'deleteBooking':
+            handleDeleteBooking($input);
+            break;
         case 'signup':
             handleSignup($input);
+            break;
+        case 'verifyEmail':
+            handleVerifyEmail($input);
             break;
         case 'login':
             handleLogin($input);
             break;
         case 'resetPassword':
             handleResetPassword($input);
+            break;
+        case 'getUserByEmail':
+            handleGetUserByEmail($input);
+            break;
+        case 'verifyFirebaseToken':
+            handleVerifyFirebaseToken($input);
+            break;
+        case 'applyOobCode':
+            handleApplyOobCode($input);
             break;
         default:
             http_response_code(400);
@@ -98,20 +135,72 @@ function handleSignup($input) {
         return;
     }
     $stmt->close();
-
     // Hash password using bcrypt
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-    // Insert user into database
-    $stmt = $conn->prepare('INSERT INTO users (name, email, contact, password, role) VALUES (?, ?, ?, ?, ?)');
-    $stmt->bind_param('sssss', $name, $email, $contact, $hashedPassword, $role);
+    // Prepare email verification token
+    $verifyToken = bin2hex(random_bytes(16));
+    $tokenExpiry = date('Y-m-d H:i:s', strtotime('+1 day'));
+
+    // Ensure users table has verification columns; if missing, attempt to add them
+    $hasIsVerified = columnExists($conn, 'users', 'is_verified');
+    $hasVerifyToken = columnExists($conn, 'users', 'verify_token');
+    $hasVerifyExpiry = columnExists($conn, 'users', 'verify_expires');
+
+    if (!($hasIsVerified && $hasVerifyToken && $hasVerifyExpiry)) {
+        // Try to add missing columns (best-effort)
+        $alterErrors = [];
+        if (!$hasIsVerified) {
+            if (!$conn->query("ALTER TABLE users ADD COLUMN is_verified TINYINT(1) DEFAULT 0")) {
+                $alterErrors[] = $conn->error;
+            }
+        }
+        if (!$hasVerifyToken) {
+            if (!$conn->query("ALTER TABLE users ADD COLUMN verify_token VARCHAR(128) DEFAULT NULL")) {
+                $alterErrors[] = $conn->error;
+            }
+        }
+        if (!$hasVerifyExpiry) {
+            if (!$conn->query("ALTER TABLE users ADD COLUMN verify_expires DATETIME DEFAULT NULL")) {
+                $alterErrors[] = $conn->error;
+            }
+        }
+
+        if (!empty($alterErrors)) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Database missing verification columns and automatic migration failed: ' . implode('; ', $alterErrors)]);
+            return;
+        }
+    }
+
+    // Insert user as unverified with token
+    $stmt = $conn->prepare('INSERT INTO users (name, email, contact, password, role, is_verified, verify_token, verify_expires) VALUES (?, ?, ?, ?, ?, 0, ?, ?)');
+    $stmt->bind_param('sssssss', $name, $email, $contact, $hashedPassword, $role, $verifyToken, $tokenExpiry);
 
     if ($stmt->execute()) {
         $userId = $conn->insert_id;
+
+        // Send verification email (best-effort). In local dev, mail() may not work; include token in response for testing.
+        $verificationLink = (isset($_SERVER['HTTP_HOST']) ? ($_SERVER['REQUEST_SCHEME'] ?? 'http') . '://' . $_SERVER['HTTP_HOST'] : 'http://localhost') . dirname($_SERVER['REQUEST_URI']) . '/api.php?action=verifyEmail&token=' . $verifyToken;
+
+        // Try to send mail; if mail not configured, return token so developer can verify manually
+        $mailSent = false;
+        $subject = 'Verify your GlamConnect email';
+        $message = "Hi {$name},\n\nPlease verify your email by clicking the link below:\n{$verificationLink}\n\nThis link expires in 24 hours.\n\nIf you didn't sign up, ignore this email.\n";
+        $headers = 'From: no-reply@glamconnect.local';
+        if (function_exists('mail')) {
+            $mailSent = mail($email, $subject, $message, $headers);
+        }
+
         http_response_code(201);
         echo json_encode([
             'success' => true,
-            'message' => 'Signup successful',
+            'message' => 'Signup successful. Verification email sent (or token returned for local testing). Please verify your email before logging in.',
+            'verification' => [
+                'token' => $verifyToken,
+                'link' => $verificationLink,
+                'mail_sent' => $mailSent
+            ],
             'user' => [
                 'userID' => $userId,
                 'name' => $name,
@@ -122,12 +211,59 @@ function handleSignup($input) {
         ]);
     } else {
         http_response_code(500);
+        $err = $conn->error ?? 'Error creating user';
         echo json_encode([
             'success' => false,
-            'message' => 'Error creating user'
+            'message' => 'Error creating user: ' . $err
         ]);
     }
     $stmt->close();
+}
+
+/**
+ * Handle verification link/token
+ * Accepts: token (via GET or POST)
+ */
+function handleVerifyEmail($input) {
+    global $conn;
+    // token can come as query param if called directly
+    $token = trim($input['token'] ?? ($_GET['token'] ?? ''));
+    if (!$token) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Missing token']);
+        return;
+    }
+
+    // Find user by token and check expiry
+    $stmt = $conn->prepare('SELECT userID, verify_expires FROM users WHERE verify_token = ?');
+    $stmt->bind_param('s', $token);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($res->num_rows === 0) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Invalid token']);
+        $stmt->close();
+        return;
+    }
+    $row = $res->fetch_assoc();
+    $stmt->close();
+
+    if (!empty($row['verify_expires']) && strtotime($row['verify_expires']) < time()) {
+        http_response_code(410);
+        echo json_encode(['success' => false, 'message' => 'Token expired']);
+        return;
+    }
+
+    // Mark user as verified and clear token
+    $upd = $conn->prepare('UPDATE users SET is_verified = 1, verify_token = NULL, verify_expires = NULL WHERE userID = ?');
+    $upd->bind_param('i', $row['userID']);
+    if ($upd->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Email verified. You may now login.']);
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to verify email']);
+    }
+    $upd->close();
 }
 
 /**
@@ -151,7 +287,7 @@ function handleLogin($input) {
     }
 
     // Fetch user by email
-    $stmt = $conn->prepare('SELECT userID, name, email, contact, password, role FROM users WHERE email = ?');
+    $stmt = $conn->prepare('SELECT userID, name, email, contact, password, role, is_verified FROM users WHERE email = ?');
     $stmt->bind_param('s', $email);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -177,6 +313,18 @@ function handleLogin($input) {
             'message' => 'Invalid email or password'
         ]);
         return;
+    }
+
+    // Ensure email is verified if the column exists
+    if (isset($user['is_verified'])) {
+        if (intval($user['is_verified']) !== 1) {
+            http_response_code(403);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Email not verified. Please check your email for verification link.'
+            ]);
+            return;
+        }
     }
 
     // Generate simple token (in production, use JWT)
@@ -256,6 +404,372 @@ function handleResetPassword($input) {
             'success' => false,
             'message' => 'Error resetting password'
         ]);
+    }
+    $stmt->close();
+}
+
+/**
+ * Get user by email (used after Firebase login to retrieve backend userID)
+ */
+function handleGetUserByEmail($input) {
+    global $conn;
+    $email = trim($input['email'] ?? '');
+    if (!$email) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Email required']);
+        return;
+    }
+
+    $stmt = $conn->prepare('SELECT userID, name, email, contact, role FROM users WHERE email = ? LIMIT 1');
+    $stmt->bind_param('s', $email);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($res->num_rows === 0) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'User not found']);
+        $stmt->close();
+        return;
+    }
+    $user = $res->fetch_assoc();
+    $stmt->close();
+
+    echo json_encode(['success' => true, 'user' => [
+        'userID' => $user['userID'],
+        'name' => $user['name'],
+        'email' => $user['email'],
+        'contact' => $user['contact'],
+        'role' => $user['role']
+    ]]);
+}
+
+/**
+ * Verify Firebase ID token (via Firebase REST API) and mark the corresponding
+ * backend user as verified. Expects: idToken (required), apiKey (required)
+ *
+ * This is a lightweight integration that calls the Firebase Identity Toolkit
+ * REST endpoint accounts:lookup to inspect the token and emailVerified flag.
+ * If emailVerified is true, the user's `is_verified` column is set to 1.
+ */
+function handleVerifyFirebaseToken($input) {
+    global $conn;
+    $idToken = trim($input['idToken'] ?? '');
+    $apiKey = trim($input['apiKey'] ?? '');
+
+    if (!$idToken || !$apiKey) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'idToken and apiKey are required']);
+        return;
+    }
+
+    // Call Firebase REST API: accounts:lookup
+    $url = 'https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' . urlencode($apiKey);
+    $payload = json_encode(['idToken' => $idToken]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    $resp = curl_exec($ch);
+    $err = curl_error($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($resp === false || $httpCode !== 200) {
+        http_response_code(400);
+        $msg = 'Failed to validate idToken with Firebase';
+        if ($err) $msg .= ': ' . $err;
+        // If Firebase returned JSON, include that for debugging
+        echo json_encode(['success' => false, 'message' => $msg, 'firebase_response' => $resp]);
+        return;
+    }
+
+    $json = json_decode($resp, true);
+    if (empty($json['users']) || !is_array($json['users'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid Firebase response', 'firebase_response' => $json]);
+        return;
+    }
+
+    $userInfo = $json['users'][0];
+    $email = $userInfo['email'] ?? '';
+    $emailVerified = isset($userInfo['emailVerified']) ? boolval($userInfo['emailVerified']) : false;
+
+    if (!$email) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Email not present in token']);
+        return;
+    }
+
+    if (!$emailVerified) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Email not verified according to Firebase', 'email' => $email]);
+        return;
+    }
+
+    // Update backend user to mark as verified
+    $stmt = $conn->prepare('UPDATE users SET is_verified = 1, verify_token = NULL, verify_expires = NULL WHERE email = ?');
+    $stmt->bind_param('s', $email);
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'User marked verified', 'email' => $email]);
+    } else {
+        http_response_code(500);
+        $errMsg = 'Failed to update user: ' . ($conn->error ?? 'unknown');
+        echo json_encode(['success' => false, 'message' => $errMsg]);
+    }
+    $stmt->close();
+}
+
+/**
+ * Apply an out-of-band code (oobCode) from Firebase email action links and
+ * mark backend user as verified when the action is successful.
+ * Expects: oobCode (required), apiKey (required)
+ */
+function handleApplyOobCode($input) {
+    global $conn;
+    $oobCode = trim($input['oobCode'] ?? '');
+    $apiKey = trim($input['apiKey'] ?? '');
+
+    if (!$oobCode || !$apiKey) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'oobCode and apiKey are required']);
+        return;
+    }
+
+    $url = 'https://identitytoolkit.googleapis.com/v1/accounts:update?key=' . urlencode($apiKey);
+    $payload = json_encode(['oobCode' => $oobCode]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    $resp = curl_exec($ch);
+    $err = curl_error($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($resp === false || $httpCode !== 200) {
+        http_response_code(400);
+        $msg = 'Failed to apply oobCode with Firebase';
+        if ($err) $msg .= ': ' . $err;
+        echo json_encode(['success' => false, 'message' => $msg, 'firebase_response' => $resp]);
+        return;
+    }
+
+    $json = json_decode($resp, true);
+    // Successful response contains 'email' and 'requestType' etc.
+    $email = $json['email'] ?? '';
+    $requestType = $json['requestType'] ?? '';
+
+    if (!$email) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Firebase did not return email', 'firebase_response' => $json]);
+        return;
+    }
+
+    // If the action was verifyEmail (or accounts:update applied it), mark user verified
+    if ($requestType === 'VERIFY_EMAIL' || true) {
+        $stmt = $conn->prepare('UPDATE users SET is_verified = 1, verify_token = NULL, verify_expires = NULL WHERE email = ?');
+        $stmt->bind_param('s', $email);
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true, 'message' => 'Email verified and user updated', 'email' => $email]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Failed to update user: ' . ($conn->error ?? 'unknown')]);
+        }
+        $stmt->close();
+        return;
+    }
+
+    echo json_encode(['success' => false, 'message' => 'Unhandled action from Firebase', 'firebase_response' => $json]);
+}
+
+/**
+ * Create a booking
+ * Required input: userID, serviceId, date, time, notes (optional)
+ */
+function handleCreateBooking($input) {
+    global $conn;
+
+    $userID = intval($input['userID'] ?? 0);
+    $serviceId = intval($input['serviceId'] ?? 0);
+    $date = trim($input['date'] ?? '');
+    $time = trim($input['time'] ?? '');
+    $notes = trim($input['notes'] ?? '');
+
+    // Check DB schema: does bookings table have service_id column?
+    $hasServiceCol = columnExists($conn, 'bookings', 'service_id');
+
+    // Validate required inputs depending on schema
+    if (!$userID || !$date || !$time) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        return;
+    }
+    if ($hasServiceCol && !$serviceId) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Missing serviceId']);
+        return;
+    }
+
+    if ($hasServiceCol) {
+        $stmt = $conn->prepare('INSERT INTO bookings (user_id, date, time, notes, service_id) VALUES (?, ?, ?, ?, ?)');
+        $stmt->bind_param('isssi', $userID, $date, $time, $notes, $serviceId);
+    } else {
+        // Older schema: no service_id column
+        $stmt = $conn->prepare('INSERT INTO bookings (user_id, date, time, notes) VALUES (?, ?, ?, ?)');
+        $stmt->bind_param('isss', $userID, $date, $time, $notes);
+    }
+
+    if ($stmt->execute()) {
+        http_response_code(201);
+        echo json_encode(['success' => true, 'message' => 'Booking created', 'bookingID' => $conn->insert_id]);
+    } else {
+        http_response_code(500);
+        $errMsg = 'Error creating booking';
+        if (!empty($DEBUG) && isset($conn->error)) {
+            $errMsg .= ': ' . $conn->error;
+        }
+        error_log('Booking create failed: ' . ($conn->error ?? 'unknown'));
+        echo json_encode(['success' => false, 'message' => $errMsg]);
+    }
+    $stmt->close();
+}
+
+/**
+ * Get bookings for a user (or all if admin)
+ * Input: userID (optional) - if provided, only return bookings for that user
+ */
+function handleGetBookings($input) {
+    global $conn;
+    $userID = intval($input['userID'] ?? 0);
+
+    // adapt select fields depending on whether service_id exists
+    $hasServiceCol = columnExists($conn, 'bookings', 'service_id');
+    if ($hasServiceCol) {
+        $selectFields = 'id, user_id, service_id, date, time, notes';
+    } else {
+        $selectFields = 'id, user_id, date, time, notes';
+    }
+
+    if ($userID) {
+        $stmt = $conn->prepare("SELECT {$selectFields} FROM bookings WHERE user_id = ? ORDER BY date DESC, time DESC");
+        $stmt->bind_param('i', $userID);
+    } else {
+        $stmt = $conn->prepare("SELECT {$selectFields} FROM bookings ORDER BY date DESC, time DESC");
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = [];
+    while ($r = $result->fetch_assoc()) {
+        $rows[] = $r;
+    }
+
+    echo json_encode(['success' => true, 'bookings' => $rows]);
+    $stmt->close();
+}
+
+/**
+ * Update a booking. Only owner may update.
+ * Input: bookingID, userID, date, time, notes
+ */
+function handleUpdateBooking($input) {
+    global $conn;
+    $bookingID = intval($input['bookingID'] ?? 0);
+    $userID = intval($input['userID'] ?? 0);
+    $date = trim($input['date'] ?? '');
+    $time = trim($input['time'] ?? '');
+    $notes = trim($input['notes'] ?? '');
+
+    if (!$bookingID || !$userID) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Missing bookingID or userID']);
+        return;
+    }
+
+    // verify ownership
+    $check = $conn->prepare('SELECT user_id FROM bookings WHERE id = ?');
+    $check->bind_param('i', $bookingID);
+    $check->execute();
+    $res = $check->get_result();
+    if ($res->num_rows === 0) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Booking not found']);
+        $check->close();
+        return;
+    }
+    $row = $res->fetch_assoc();
+    if (intval($row['user_id']) !== $userID) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Not authorized to update this booking']);
+        $check->close();
+        return;
+    }
+    $check->close();
+
+    $stmt = $conn->prepare('UPDATE bookings SET date = ?, time = ?, notes = ? WHERE id = ?');
+    $stmt->bind_param('sssi', $date, $time, $notes, $bookingID);
+
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Booking updated']);
+    } else {
+        http_response_code(500);
+        $errMsg = 'Error updating booking';
+        if (!empty($DEBUG) && isset($conn->error)) { $errMsg .= ': ' . $conn->error; }
+        error_log('Booking update failed: ' . ($conn->error ?? 'unknown'));
+        echo json_encode(['success' => false, 'message' => $errMsg]);
+    }
+    $stmt->close();
+}
+
+/**
+ * Delete a booking. Only owner may delete.
+ * Input: bookingID, userID
+ */
+function handleDeleteBooking($input) {
+    global $conn;
+    $bookingID = intval($input['bookingID'] ?? 0);
+    $userID = intval($input['userID'] ?? 0);
+
+    if (!$bookingID || !$userID) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Missing bookingID or userID']);
+        return;
+    }
+
+    // verify ownership
+    $check = $conn->prepare('SELECT user_id FROM bookings WHERE id = ?');
+    $check->bind_param('i', $bookingID);
+    $check->execute();
+    $res = $check->get_result();
+    if ($res->num_rows === 0) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Booking not found']);
+        $check->close();
+        return;
+    }
+    $row = $res->fetch_assoc();
+    if (intval($row['user_id']) !== $userID) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Not authorized to delete this booking']);
+        $check->close();
+        return;
+    }
+    $check->close();
+
+    $stmt = $conn->prepare('DELETE FROM bookings WHERE id = ?');
+    $stmt->bind_param('i', $bookingID);
+
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Booking deleted']);
+    } else {
+        http_response_code(500);
+        $errMsg = 'Error deleting booking';
+        if (!empty($DEBUG) && isset($conn->error)) { $errMsg .= ': ' . $conn->error; }
+        error_log('Booking delete failed: ' . ($conn->error ?? 'unknown'));
+        echo json_encode(['success' => false, 'message' => $errMsg]);
     }
     $stmt->close();
 }

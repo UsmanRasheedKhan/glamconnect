@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Auth.css';
-import { signup, login, resetPassword } from '../api/authService';
+import { signup } from '../api/authService';
+import { auth, sendVerificationToUser, sendPasswordReset, firebaseConfig } from '../firebase';
+import { createUserWithEmailAndPassword, signOut, signInWithEmailAndPassword } from 'firebase/auth';
+import axios from '../api/axiosConfig';
 
 // ========== AUTH COMPONENT ==========
 // This component handles all authentication: Login, Signup, and Forgot Password
@@ -29,6 +32,8 @@ const Auth = () => {
   
   // Tracks if a request is being sent to the server
   const [loading, setLoading] = useState(false);
+  // When a user is signed in but not verified, keep the firebase user here so we can resend verification
+  const [unverifiedUser, setUnverifiedUser] = useState(null);
   
   // Hook to navigate to different pages
   const navigate = useNavigate();
@@ -93,39 +98,97 @@ const Auth = () => {
     }
 
     // ===== SEND LOGIN REQUEST TO SERVER =====
-    setLoading(true);      // Show "logging in..." message
-    setErrors({});         // Clear any previous errors
-
+    setLoading(true);
+    setErrors({});
     try {
-      // Call the login function from authService
-      // Pass email (stored in phone field) and password
-      const response = await login(formData.phone, formData.password);
-      
-      // Check if login was successful
-      if (response.success) {
-        // Save the token (for verifying user is logged in)
-        localStorage.setItem('token', response.token);
-        
-        // Save user information to localStorage
-        localStorage.setItem('user', JSON.stringify(response.user));
-        
-        // Show success message
-        alert('Login successful!');
-        
-        // Redirect to home/dashboard page
-        navigate('/home');
-      } else {
-        // Show error message from server
-        setErrors({ api: response.message });
+      // Sign in with Firebase
+      const userCred = await signInWithEmailAndPassword(auth, formData.phone, formData.password);
+      const fbUser = userCred.user;
+
+      // If not verified keep session and allow resend
+      if (!fbUser.emailVerified) {
+        setUnverifiedUser(fbUser);
+        setErrors({ api: 'Email not verified. You can resend the verification email below.' });
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      // If something goes wrong, show error
-      setErrors({ api: error.message || 'Login failed. Please try again.' });
+
+      // Now fetch backend user record by email
+      console.log('Firebase user on login:', fbUser);
+      const emailForLookup = fbUser.email || formData.phone || formData.email;
+      if (!emailForLookup) {
+        setErrors({ api: 'Email not available from Firebase. Cannot complete login.' });
+        try { await signOut(auth); } catch (e) {}
+        setLoading(false);
+        return;
+      }
+
+      const payload = { action: 'getUserByEmail', email: emailForLookup };
+      try {
+        const resp = await axios.post('', payload);
+        if (resp.data && resp.data.success && resp.data.user) {
+          // Attempt to get a Firebase ID token to mark the session as "logged in"
+          try {
+            const idToken = await fbUser.getIdToken();
+            localStorage.setItem('token', idToken);
+          } catch (tokenErr) {
+            console.warn('Could not get Firebase ID token:', tokenErr);
+            // Fallback: store a lightweight flag so ProtectedRoute works
+            localStorage.setItem('token', 'firebase-session');
+          }
+
+          localStorage.setItem('user', JSON.stringify(resp.data.user));
+          alert('Login successful!');
+          navigate('/home');
+        } else {
+          console.error('Backend getUserByEmail response:', resp.data);
+          setErrors({ api: resp.data?.message || 'No account found in backend. Please complete signup.' });
+          try { await signOut(auth); } catch (e) {}
+        }
+      } catch (axErr) {
+        console.error('Backend request failed', axErr);
+        const serverMsg = axErr?.response?.data?.message || axErr?.response?.data || axErr.message;
+        setErrors({ api: `Server error: ${serverMsg}` });
+        try { await signOut(auth); } catch (e) {}
+      }
+    } catch (err) {
+      console.error('Login error', err);
+      setErrors({ api: err.message || 'Login failed' });
     } finally {
-      // After trying to login, stop loading
       setLoading(false);
     }
   };
+
+  // If user lands on the app after clicking the Firebase verification link,
+  // Firebase will include an oobCode in the URL. Automatically apply that
+  // code via the backend so the DB is updated without requiring "I verified".
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oobCode = params.get('oobCode') || params.get('oobcode');
+    if (oobCode) {
+      (async () => {
+        setLoading(true);
+        try {
+          const resp = await axios.post('', { action: 'applyOobCode', oobCode, apiKey: firebaseConfig.apiKey });
+          if (resp.data && resp.data.success) {
+            alert('Email verified successfully. You may now log in.');
+            // Clean up URL so user doesn't re-run the action
+            const clean = window.location.pathname + (window.location.hash || '');
+            window.history.replaceState({}, document.title, clean);
+            setActiveTab('login');
+          } else {
+            console.warn('applyOobCode response', resp.data);
+            setErrors({ api: resp.data?.message || 'Failed to apply verification code' });
+          }
+        } catch (err) {
+          console.error('applyOobCode failed', err);
+          setErrors({ api: err?.response?.data?.message || err.message || 'Verification failed' });
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }
+  }, []);
 
   // ===== SIGNUP HANDLER =====
   // This function runs when user submits the signup form
@@ -163,42 +226,73 @@ const Auth = () => {
     setLoading(true);
     setErrors({});
 
+
+
+    // Use Firebase to create an auth account and send verification email first.
+    // We will finalize the backend user creation only after the user verifies their email.
     try {
-      // Call signup function from authService with user's data
-      const response = await signup(
-        formData.name,
-        formData.email,
-        formData.contact,
-        formData.password
-      );
-      
-      // Check if signup was successful
-      if (response.success) {
-        // Show success message
-        alert('Signup successful! Please login with your credentials.');
-        
-        // Clear the form
-        setFormData({
-          phone: '',
-          password: '',
-          newPassword: '',
-          name: '',
-          email: '',
-          contact: '',
-          confirmPassword: '',
-        });
-        
-        // Switch to login tab so user can log in
-        setActiveTab('login');
-      } else {
-        // Show error from server
-        setErrors({ api: response.message });
+      // Create a Firebase auth user
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      // Send verification email via helper
+      const sendResp = await sendVerificationToUser(userCredential.user);
+
+      // Persist backend user record immediately (is_verified defaults to 0)
+      try {
+        const resp = await signup(formData.name, formData.email, formData.contact, formData.password);
+        if (resp && resp.success) {
+          // Persisted in backend
+          console.log('Backend signup created:', resp.user);
+        } else {
+          console.warn('Backend signup returned unexpected response', resp);
+        }
+      } catch (backendErr) {
+        console.error('Backend signup error', backendErr);
+        // We do not block the Firebase flow; inform dev via console and UI
+        setErrors({ api: backendErr.message || 'Failed to save user to backend' });
       }
+
+      // Inform user to verify
+      if (sendResp.success) {
+        alert('Signup created. A verification email was sent to your address. Please verify your email before logging in.');
+      } else {
+        alert('Signup created but verification email could not be sent automatically. Please check your email or use the verification link provided by Firebase.');
+      }
+
+      // Clear sensitive fields but keep email/name for convenience
+      setFormData({
+        phone: '',
+        password: '',
+        newPassword: '',
+        name: formData.name,
+        email: formData.email,
+        contact: formData.contact,
+        confirmPassword: '',
+      });
     } catch (error) {
-      // Show error if signup fails
+      console.error('Firebase signup error', error);
       setErrors({ api: error.message || 'Signup failed. Please try again.' });
     } finally {
-      // Stop loading after trying signup
+      setLoading(false);
+    }
+  };
+
+  // unneeded pendingSignup/finalize flow: we now persist backend user at signup time.
+
+  // Resend verification email for an unverified firebase user
+  const resendVerification = async () => {
+    if (!unverifiedUser) return;
+    setLoading(true);
+    try {
+      const r = await sendVerificationToUser(unverifiedUser);
+      if (r.success) {
+        alert('Verification email resent. Please check your inbox.');
+      } else {
+        alert('Could not resend verification email automatically. Please check your email provider.');
+      }
+    } catch (err) {
+      console.error('Resend verification error', err);
+      setErrors({ api: err.message || 'Failed to resend verification email' });
+    } finally {
       setLoading(false);
     }
   };
@@ -229,45 +323,21 @@ const Auth = () => {
       return;
     }
 
-    // ===== SEND PASSWORD RESET REQUEST TO SERVER =====
+    // Use Firebase to send password reset email
     setLoading(true);
     setErrors({});
-
     try {
-      // Call resetPassword function from authService
-      const response = await resetPassword(
-        formData.email,
-        formData.contact,
-        formData.newPassword
-      );
-      
-      // Check if reset was successful
-      if (response.success) {
-        // Show success message
-        alert('Password reset successful! Please login with your new password.');
-        
-        // Clear the form
-        setFormData({
-          phone: '',
-          password: '',
-          newPassword: '',
-          name: '',
-          email: '',
-          contact: '',
-          confirmPassword: '',
-        });
-        
-        // Go back to login tab
+      const r = await sendPasswordReset(formData.email);
+      if (r.success) {
+        alert('Password reset email sent. Please check your inbox.');
         setActiveTab('login');
       } else {
-        // Show error from server
-        setErrors({ api: response.message });
+        setErrors({ api: r.message || 'Failed to send reset email' });
       }
-    } catch (error) {
-      // Show error if reset fails
-      setErrors({ api: error.message || 'Password reset failed. Please try again.' });
+    } catch (err) {
+      console.error('Password reset error', err);
+      setErrors({ api: err.message || 'Password reset failed' });
     } finally {
-      // Stop loading after trying reset
       setLoading(false);
     }
   };
@@ -322,11 +392,6 @@ const Auth = () => {
                 disabled={loading}  // Disable input while sending request
               />
               {errors.phone && <span className="error">{errors.phone}</span>}
-            </div>
-            
-            {/* Password input field */}
-            <div className="form-group">
-              <label>Password</label>
               <input
                 type="password"
                 name="password"
@@ -357,6 +422,12 @@ const Auth = () => {
             <button type="submit" className="auth-btn" disabled={loading}>
               {loading ? 'Logging in...' : 'Login'}
             </button>
+            {unverifiedUser && (
+              <div className="form-meta">
+                <p className="info">Your email is not verified yet.</p>
+                <button type="button" className="auth-btn" onClick={resendVerification} disabled={loading}>Resend verification email</button>
+              </div>
+            )}
           </form>
         )}
 
@@ -440,6 +511,7 @@ const Auth = () => {
             <button type="submit" className="auth-btn" disabled={loading}>
               {loading ? 'Signing up...' : 'Sign Up'}
             </button>
+            {/* verification is handled by Firebase; backend record is created at signup time */}
           </form>
         )}
 

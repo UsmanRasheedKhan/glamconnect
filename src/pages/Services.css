@@ -336,6 +336,22 @@
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.12);
 }
 
+/* Notes textarea styling */
+.form-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 10px;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 72px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #111;
+}
+.form-group textarea::placeholder { color: rgba(0,0,0,0.45); }
+.form-group textarea:focus { border-color: rgba(102,126,234,0.9); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.12); }
+
 /* User info preview */
 .user-info {
   background: #f7f9fc;
