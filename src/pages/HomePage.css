@@ -1,4 +1,4 @@
-/* Base Styles */
+
 .home-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #8a2be2, #ff69b4);
@@ -6,7 +6,7 @@
   padding-bottom: 4rem;
 }
 
-/* Glass Section Styles */
+
 .glass-section {
   padding: 4rem 2rem;
   margin: 2rem auto;
@@ -30,7 +30,7 @@
   color: transparent;
 }
 
-/* Glass Card Styles */
+
 .glass-card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
@@ -47,7 +47,7 @@
   box-shadow: 0 12px 48px 0 rgba(31, 38, 135, 0.45);
 }
 
-/* Services Section */
+
 .services-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -83,7 +83,7 @@
   margin-bottom: 1.5rem;
 }
 
-/* Features Grid */
+
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -108,7 +108,7 @@
   transition: transform 0.6s ease;
 }
 
-/* CTA Section */
+
 .cta-section {
   text-align: center;
   padding: 4rem 2rem;
@@ -136,7 +136,7 @@
   flex-wrap: wrap;
 }
 
-/* Button Styles */
+
 .cta-button,
 .primary-button,
 .secondary-button {
@@ -177,7 +177,7 @@
   transform: translateY(-2px);
 }
 
-/* Animations */
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -193,7 +193,7 @@
   animation: fadeIn 0.6s ease-out forwards;
 }
 
-/* Responsive Design */
+
 @media (max-width: 768px) {
   .glass-section {
     padding: 2rem 1rem;

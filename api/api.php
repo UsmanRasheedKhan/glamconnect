@@ -1,16 +1,12 @@
 <?php
-/**
- * GlamConnect API Main Router
- * Handles all API requests and routes them to appropriate functions
- * Database: users table with (userID, name, email, contact, password, role)
- */
+
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Handle preflight requests
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
@@ -18,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'config.php';
 
-// Debug mode: when true, API will include DB error messages in responses (development only)
+
 $DEBUG = true;
 
 /**
@@ -31,7 +27,7 @@ function columnExists($conn, $table, $column) {
     return ($res && $res->num_rows > 0);
 }
 
-// Get request body
+
 $input = json_decode(file_get_contents('php://input'), true);
 $action = $input['action'] ?? null;
 
@@ -42,6 +38,12 @@ try {
             break;
         case 'getBookings':
             handleGetBookings($input);
+            break;
+        case 'adminUpdateBooking':
+            handleAdminUpdateBooking($input);
+            break;
+        case 'adminDeleteBooking':
+            handleAdminDeleteBooking($input);
             break;
         case 'updateBooking':
             handleUpdateBooking($input);
@@ -70,6 +72,18 @@ try {
         case 'applyOobCode':
             handleApplyOobCode($input);
             break;
+        case 'getServices':
+            handleGetServices($input);
+            break;
+        case 'createService':
+            handleCreateService($input);
+            break;
+        case 'updateService':
+            handleUpdateService($input);
+            break;
+        case 'deleteService':
+            handleDeleteService($input);
+            break;
         default:
             http_response_code(400);
             echo json_encode([
@@ -86,10 +100,7 @@ try {
     ]);
 }
 
-/**
- * Handle user signup
- * Stores: name, email, contact, password (hashed), role (default: customer)
- */
+
 function handleSignup($input) {
     global $conn;
 
@@ -97,9 +108,9 @@ function handleSignup($input) {
     $email = trim($input['email'] ?? '');
     $contact = trim($input['contact'] ?? '');
     $password = $input['password'] ?? '';
-    $role = 'customer'; // Default role
+    $role = 'customer'; 
 
-    // Validate inputs
+   
     if (empty($name) || empty($email) || empty($contact) || empty($password)) {
         http_response_code(400);
         echo json_encode([
@@ -109,7 +120,7 @@ function handleSignup($input) {
         return;
     }
 
-    // Validate email format
+   
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         http_response_code(400);
         echo json_encode([
@@ -119,7 +130,7 @@ function handleSignup($input) {
         return;
     }
 
-    // Check if email already exists
+  
     $stmt = $conn->prepare('SELECT userID FROM users WHERE email = ?');
     $stmt->bind_param('s', $email);
     $stmt->execute();
@@ -135,20 +146,20 @@ function handleSignup($input) {
         return;
     }
     $stmt->close();
-    // Hash password using bcrypt
+   
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-    // Prepare email verification token
+  
     $verifyToken = bin2hex(random_bytes(16));
     $tokenExpiry = date('Y-m-d H:i:s', strtotime('+1 day'));
 
-    // Ensure users table has verification columns; if missing, attempt to add them
+   
     $hasIsVerified = columnExists($conn, 'users', 'is_verified');
     $hasVerifyToken = columnExists($conn, 'users', 'verify_token');
     $hasVerifyExpiry = columnExists($conn, 'users', 'verify_expires');
 
     if (!($hasIsVerified && $hasVerifyToken && $hasVerifyExpiry)) {
-        // Try to add missing columns (best-effort)
+        
         $alterErrors = [];
         if (!$hasIsVerified) {
             if (!$conn->query("ALTER TABLE users ADD COLUMN is_verified TINYINT(1) DEFAULT 0")) {
@@ -173,17 +184,17 @@ function handleSignup($input) {
         }
     }
 
-    // Insert user as unverified with token
+  
     $stmt = $conn->prepare('INSERT INTO users (name, email, contact, password, role, is_verified, verify_token, verify_expires) VALUES (?, ?, ?, ?, ?, 0, ?, ?)');
     $stmt->bind_param('sssssss', $name, $email, $contact, $hashedPassword, $role, $verifyToken, $tokenExpiry);
 
     if ($stmt->execute()) {
         $userId = $conn->insert_id;
 
-        // Send verification email (best-effort). In local dev, mail() may not work; include token in response for testing.
+        
         $verificationLink = (isset($_SERVER['HTTP_HOST']) ? ($_SERVER['REQUEST_SCHEME'] ?? 'http') . '://' . $_SERVER['HTTP_HOST'] : 'http://localhost') . dirname($_SERVER['REQUEST_URI']) . '/api.php?action=verifyEmail&token=' . $verifyToken;
 
-        // Try to send mail; if mail not configured, return token so developer can verify manually
+        
         $mailSent = false;
         $subject = 'Verify your GlamConnect email';
         $message = "Hi {$name},\n\nPlease verify your email by clicking the link below:\n{$verificationLink}\n\nThis link expires in 24 hours.\n\nIf you didn't sign up, ignore this email.\n";
@@ -220,13 +231,10 @@ function handleSignup($input) {
     $stmt->close();
 }
 
-/**
- * Handle verification link/token
- * Accepts: token (via GET or POST)
- */
+
 function handleVerifyEmail($input) {
     global $conn;
-    // token can come as query param if called directly
+    
     $token = trim($input['token'] ?? ($_GET['token'] ?? ''));
     if (!$token) {
         http_response_code(400);
@@ -254,7 +262,7 @@ function handleVerifyEmail($input) {
         return;
     }
 
-    // Mark user as verified and clear token
+    
     $upd = $conn->prepare('UPDATE users SET is_verified = 1, verify_token = NULL, verify_expires = NULL WHERE userID = ?');
     $upd->bind_param('i', $row['userID']);
     if ($upd->execute()) {
@@ -640,24 +648,33 @@ function handleCreateBooking($input) {
 /**
  * Get bookings for a user (or all if admin)
  * Input: userID (optional) - if provided, only return bookings for that user
+ * Returns bookings with user name, email, and service name
  */
 function handleGetBookings($input) {
     global $conn;
     $userID = intval($input['userID'] ?? 0);
 
-    // adapt select fields depending on whether service_id exists
+    // adapt select fields depending on whether service_id and status columns exist
     $hasServiceCol = columnExists($conn, 'bookings', 'service_id');
-    if ($hasServiceCol) {
-        $selectFields = 'id, user_id, service_id, date, time, notes';
-    } else {
-        $selectFields = 'id, user_id, date, time, notes';
-    }
+    $hasStatusCol = columnExists($conn, 'bookings', 'status');
+    
+    $selectFields = 'b.id, b.user_id, b.date, b.time, b.notes, u.name, u.email';
+    if ($hasServiceCol) $selectFields .= ', b.service_id, s.service_name';
+    if ($hasStatusCol) $selectFields .= ', b.status';
 
     if ($userID) {
-        $stmt = $conn->prepare("SELECT {$selectFields} FROM bookings WHERE user_id = ? ORDER BY date DESC, time DESC");
+        $sql = "SELECT {$selectFields} FROM bookings b 
+                LEFT JOIN users u ON b.user_id = u.userID 
+                LEFT JOIN services s ON b.service_id = s.id 
+                WHERE b.user_id = ? ORDER BY b.date DESC, b.time DESC";
+        $stmt = $conn->prepare($sql);
         $stmt->bind_param('i', $userID);
     } else {
-        $stmt = $conn->prepare("SELECT {$selectFields} FROM bookings ORDER BY date DESC, time DESC");
+        $sql = "SELECT {$selectFields} FROM bookings b 
+                LEFT JOIN users u ON b.user_id = u.userID 
+                LEFT JOIN services s ON b.service_id = s.id 
+                ORDER BY b.date DESC, b.time DESC";
+        $stmt = $conn->prepare($sql);
     }
 
     $stmt->execute();
@@ -770,6 +787,210 @@ function handleDeleteBooking($input) {
         if (!empty($DEBUG) && isset($conn->error)) { $errMsg .= ': ' . $conn->error; }
         error_log('Booking delete failed: ' . ($conn->error ?? 'unknown'));
         echo json_encode(['success' => false, 'message' => $errMsg]);
+    }
+    $stmt->close();
+}
+
+/**
+ * Admin: update any booking (status, date, time, notes, service_id)
+ * Expects: bookingID (required) and fields to update. No ownership checks.
+ */
+function handleAdminUpdateBooking($input) {
+    global $conn;
+    $bookingID = intval($input['bookingID'] ?? 0);
+    if (!$bookingID) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'bookingID required']);
+        return;
+    }
+
+    $fields = [];
+    $params = [];
+    $types = '';
+
+    if (isset($input['date'])) { $fields[] = 'date = ?'; $params[] = $input['date']; $types .= 's'; }
+    if (isset($input['time'])) { $fields[] = 'time = ?'; $params[] = $input['time']; $types .= 's'; }
+    if (isset($input['notes'])) { $fields[] = 'notes = ?'; $params[] = $input['notes']; $types .= 's'; }
+    if (isset($input['status'])) { $fields[] = 'status = ?'; $params[] = $input['status']; $types .= 's'; }
+
+    // service_id optional depending on schema
+    if (columnExists($conn, 'bookings', 'service_id') && isset($input['service_id'])) {
+        $fields[] = 'service_id = ?'; $params[] = intval($input['service_id']); $types .= 'i';
+    }
+
+    if (empty($fields)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'No fields to update']);
+        return;
+    }
+
+    $types .= 'i'; // bookingID at the end
+    $params[] = $bookingID;
+
+    $sql = 'UPDATE bookings SET ' . implode(', ', $fields) . ' WHERE id = ?';
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param($types, ...$params);
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Booking updated by admin']);
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Error updating booking: ' . ($conn->error ?? '')]);
+    }
+    $stmt->close();
+}
+
+/**
+ * Admin: delete any booking
+ * Expects: bookingID
+ */
+function handleAdminDeleteBooking($input) {
+    global $conn;
+    $bookingID = intval($input['bookingID'] ?? 0);
+    if (!$bookingID) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'bookingID required']);
+        return;
+    }
+
+    $stmt = $conn->prepare('DELETE FROM bookings WHERE id = ?');
+    $stmt->bind_param('i', $bookingID);
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Booking deleted']);
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Error deleting booking: ' . ($conn->error ?? '')]);
+    }
+    $stmt->close();
+}
+
+/**
+ * Get all services
+ */
+function handleGetServices($input) {
+    global $conn;
+    
+    // Check if services table exists, create if not
+    if (!columnExists($conn, 'services', 'id')) {
+        $conn->query("CREATE TABLE IF NOT EXISTS services (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            service_name VARCHAR(255) NOT NULL,
+            description TEXT,
+            price DECIMAL(10, 2),
+            image_url VARCHAR(500),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+    }
+    
+    $stmt = $conn->prepare("SELECT id, service_name, description, price, image_url FROM services ORDER BY service_name ASC");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $services = [];
+    while ($r = $result->fetch_assoc()) {
+        $services[] = $r;
+    }
+    
+    echo json_encode(['success' => true, 'services' => $services]);
+    $stmt->close();
+}
+
+/**
+ * Create a new service
+ * Input: service_name, description, price, image_url
+ */
+function handleCreateService($input) {
+    global $conn;
+    
+    $service_name = trim($input['service_name'] ?? '');
+    $description = trim($input['description'] ?? '');
+    $price = floatval($input['price'] ?? 0);
+    $image_url = trim($input['image_url'] ?? '');
+    
+    if (!$service_name) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Service name required']);
+        return;
+    }
+    
+    $stmt = $conn->prepare("INSERT INTO services (service_name, description, price, image_url) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param('ssds', $service_name, $description, $price, $image_url);
+    
+    if ($stmt->execute()) {
+        http_response_code(201);
+        echo json_encode(['success' => true, 'message' => 'Service created', 'serviceID' => $conn->insert_id]);
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Error creating service: ' . ($conn->error ?? '')]);
+    }
+    $stmt->close();
+}
+
+/**
+ * Update a service
+ * Input: id, service_name, description, price, image_url
+ */
+function handleUpdateService($input) {
+    global $conn;
+    
+    $id = intval($input['id'] ?? 0);
+    if (!$id) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Service ID required']);
+        return;
+    }
+    
+    $fields = [];
+    $params = [];
+    $types = '';
+    
+    if (isset($input['service_name'])) { $fields[] = 'service_name = ?'; $params[] = $input['service_name']; $types .= 's'; }
+    if (isset($input['description'])) { $fields[] = 'description = ?'; $params[] = $input['description']; $types .= 's'; }
+    if (isset($input['price'])) { $fields[] = 'price = ?'; $params[] = floatval($input['price']); $types .= 'd'; }
+    if (isset($input['image_url'])) { $fields[] = 'image_url = ?'; $params[] = $input['image_url']; $types .= 's'; }
+    
+    if (empty($fields)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'No fields to update']);
+        return;
+    }
+    
+    $types .= 'i';
+    $params[] = $id;
+    
+    $sql = 'UPDATE services SET ' . implode(', ', $fields) . ' WHERE id = ?';
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param($types, ...$params);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Service updated']);
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Error updating service: ' . ($conn->error ?? '')]);
+    }
+    $stmt->close();
+}
+
+/**
+ * Delete a service
+ * Input: id
+ */
+function handleDeleteService($input) {
+    global $conn;
+    
+    $id = intval($input['id'] ?? 0);
+    if (!$id) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Service ID required']);
+        return;
+    }
+    
+    $stmt = $conn->prepare('DELETE FROM services WHERE id = ?');
+    $stmt->bind_param('i', $id);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Service deleted']);
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Error deleting service: ' . ($conn->error ?? '')]);
     }
     $stmt->close();
 }

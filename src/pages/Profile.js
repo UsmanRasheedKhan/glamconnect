@@ -31,7 +31,7 @@ const Profile = () => {
   useEffect(() => {
     if (!user) return;
     fetchBookings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   const fetchBookings = async () => {
@@ -153,7 +153,7 @@ const Profile = () => {
                 <div key={b.id} className="booking-card">
                   <div className="booking-header">
                     <h4>Booking #{b.id}</h4>
-                    <div className="booking-status">{b.date} @ {b.time}</div>
+                    <div className="booking-status">{b.date} @ {b.time} — {b.status ? `Status: ${b.status}` : 'Status: pending'}</div>
                   </div>
                   <div className="booking-details">
                     {editingId === b.id ? (
@@ -181,6 +181,9 @@ const Profile = () => {
                           <p><strong>Service:</strong> {SERVICE_NAMES[b.service_id] || `ID ${b.service_id}`}</p>
                         )}
                         {b.notes && <p><strong>Notes:</strong> {b.notes}</p>}
+                        {b.status === 'confirmed' && (
+                          <p className="confirmed-note" style={{ color: 'green', fontSize: '0.9em' }}>✓ Confirmed by admin</p>
+                        )}
                         <div className="booking-actions">
                           <button className="btn" onClick={() => startEdit(b)}>Edit</button>
                           <button className="btn danger" onClick={() => handleDelete(b.id)}>Delete</button>

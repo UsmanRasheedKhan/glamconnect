@@ -32,8 +32,7 @@ const Services = () => {
     notes: '',
   });
 
-  // ===== HARDCODED SERVICES DATA =====
-  // List of all salon services with details
+  
   const services = [
     {
       id: 1,

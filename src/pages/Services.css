@@ -1,5 +1,4 @@
-/* ===== SERVICES PAGE STYLING ===== */
-/* This file styles the services page with grid layout and modal */
+
 
 .services-page {
   width: 100%;
@@ -9,8 +8,7 @@
   padding-bottom: 40px;
 }
 
-/* ===== SERVICES HEADER ===== */
-/* Top section with title and description */
+
 
 .services-header {
   text-align: center;
@@ -35,8 +33,7 @@
   opacity: 0.9;
 }
 
-/* ===== SERVICES CONTAINER ===== */
-/* Main container for services grid */
+
 
 .services-container {
   max-width: 1200px;
@@ -50,8 +47,7 @@
   gap: 25px;
 }
 
-/* ===== SERVICE ITEM ===== */
-/* Individual service card */
+
 
 .service-item {
   background: rgba(255,255,255,0.06);
