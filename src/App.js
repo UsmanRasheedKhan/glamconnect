@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Auth from './screens/Auth';
 import Home from './screens/Home';
 import AdminAuth from './screens/AdminAuth';
+import { ToastProvider } from './components/ToastContainer';
 
 // ===== IMPORT ALL PAGE COMPONENTS =====
 // These are the new pages for the website
@@ -15,6 +16,7 @@ import Gallery from './pages/Gallery';
 import ContactUs from './pages/ContactUs';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
+import StaffDashboard from './pages/StaffDashboard';
 
 // ===== APP COMPONENT =====
 // This is the main app component that handles routing (page navigation)
@@ -68,9 +70,10 @@ function App() {
   return (
     // BrowserRouter enables routing in the app
     <Router>
-      <div className="App">
-        {/* Navbar: always show global navigation (home is public landing) */}
-        <Navbar />
+      <ToastProvider>
+        <div className="App">
+          {/* Navbar: always show global navigation (home is public landing) */}
+          <Navbar />
 
         {/* Routes: Set up all the pages and their paths */}
         <Routes>
@@ -167,6 +170,9 @@ function App() {
             }
           />
 
+          {/* Staff Dashboard route */}
+          <Route path="/staff" element={<StaffDashboard />} />
+
           {/* 
             Route 8: Fallback for unknown URLs
             Path: "*" (any path not matching above)
@@ -176,6 +182,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      </ToastProvider>
     </Router>
   );
 }

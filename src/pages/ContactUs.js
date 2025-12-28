@@ -4,9 +4,11 @@
 
 import React, { useState } from 'react';
 import '../pages/ContactUs.css';
+import { useToast } from '../components/ToastContainer';
 
 // ContactUs is the main component for the contact page
 export default function ContactUs() {
+  const { showSuccess, showWarning } = useToast();
   // formData state stores the contact form inputs
   // Includes: name, email, phone, subject, message
   const [formData, setFormData] = useState({
@@ -38,7 +40,7 @@ export default function ContactUs() {
 
     // Check if all fields are filled
     if (!formData.name || !formData.email || !formData.phone || !formData.subject || !formData.message) {
-      alert('Please fill in all fields');
+      showWarning('Please fill in all fields');
       return;
     }
 

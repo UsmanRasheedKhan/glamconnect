@@ -60,6 +60,9 @@ try {
         case 'login':
             handleLogin($input);
             break;
+        case 'adminLogin':
+            handleAdminLogin($input);
+            break;
         case 'resetPassword':
             handleResetPassword($input);
             break;
@@ -355,6 +358,111 @@ function handleLogin($input) {
 }
 
 /**
+ * Handle admin/staff login
+ * Authenticates against admin_users table with role-based access
+ */
+function handleAdminLogin($input) {
+    global $conn;
+
+    $email = trim($input['email'] ?? '');
+    $password = $input['password'] ?? '';
+
+    // Validate inputs
+    if (empty($email) || empty($password)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Email and password are required'
+        ]);
+        return;
+    }
+
+    // First check if admin_users table exists
+    $tableCheck = $conn->query("SHOW TABLES LIKE 'admin_users'");
+    if ($tableCheck->num_rows === 0) {
+        // Create admin_users table if it doesn't exist
+        $createTable = "CREATE TABLE admin_users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) NOT NULL UNIQUE,
+            email VARCHAR(100) NOT NULL UNIQUE,
+            password VARCHAR(255) NOT NULL,
+            full_name VARCHAR(100),
+            role ENUM('super_admin', 'admin', 'staff') NOT NULL DEFAULT 'staff',
+            is_active TINYINT(1) DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )";
+        $conn->query($createTable);
+
+        // Insert default admin user
+        $defaultPassword = password_hash('admin123', PASSWORD_BCRYPT);
+        $conn->query("INSERT INTO admin_users (username, email, password, full_name, role) VALUES 
+            ('admin', 'admin@glamconnect.com', '$defaultPassword', 'System Administrator', 'super_admin')");
+        
+        // Insert default staff user
+        $staffPassword = password_hash('staff123', PASSWORD_BCRYPT);
+        $conn->query("INSERT INTO admin_users (username, email, password, full_name, role) VALUES 
+            ('staff1', 'staff@glamconnect.com', '$staffPassword', 'Staff Member', 'staff')");
+    }
+
+    // Fetch admin user by email
+    $stmt = $conn->prepare('SELECT id, username, email, password, full_name, role, is_active FROM admin_users WHERE email = ?');
+    $stmt->bind_param('s', $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid credentials'
+        ]);
+        $stmt->close();
+        return;
+    }
+
+    $user = $result->fetch_assoc();
+    $stmt->close();
+
+    // Check if account is active
+    if (!$user['is_active']) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Account is deactivated. Contact administrator.'
+        ]);
+        return;
+    }
+
+    // Verify password
+    if (!password_verify($password, $user['password'])) {
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid credentials'
+        ]);
+        return;
+    }
+
+    // Generate token (simple implementation - use JWT in production)
+    $token = bin2hex(random_bytes(32));
+
+    // Return success with user data
+    echo json_encode([
+        'success' => true,
+        'message' => 'Login successful',
+        'token' => $token,
+        'user' => [
+            'id' => $user['id'],
+            'username' => $user['username'],
+            'email' => $user['email'],
+            'full_name' => $user['full_name'],
+            'role' => $user['role']
+        ]
+    ]);
+}
+
+/**
  * Handle password reset
  * Frontend sends email and contact, we use only email
  */
@@ -606,10 +714,12 @@ function handleCreateBooking($input) {
     $time = trim($input['time'] ?? '');
     $notes = trim($input['notes'] ?? '');
 
-    // Check DB schema: does bookings table have service_id column?
-    $hasServiceCol = columnExists($conn, 'bookings', 'service_id');
+    // Check actual column names
+    $userIdCol = columnExists($conn, 'bookings', 'userID') ? 'userID' : 'user_id';
+    $serviceIdCol = columnExists($conn, 'bookings', 'serviceID') ? 'serviceID' : 'service_id';
+    $hasServiceCol = columnExists($conn, 'bookings', 'serviceID') || columnExists($conn, 'bookings', 'service_id');
 
-    // Validate required inputs depending on schema
+    // Validate required inputs
     if (!$userID || !$date || !$time) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Missing required fields']);
@@ -622,11 +732,10 @@ function handleCreateBooking($input) {
     }
 
     if ($hasServiceCol) {
-        $stmt = $conn->prepare('INSERT INTO bookings (user_id, date, time, notes, service_id) VALUES (?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare("INSERT INTO bookings ({$userIdCol}, date, time, notes, {$serviceIdCol}) VALUES (?, ?, ?, ?, ?)");
         $stmt->bind_param('isssi', $userID, $date, $time, $notes, $serviceId);
     } else {
-        // Older schema: no service_id column
-        $stmt = $conn->prepare('INSERT INTO bookings (user_id, date, time, notes) VALUES (?, ?, ?, ?)');
+        $stmt = $conn->prepare("INSERT INTO bookings ({$userIdCol}, date, time, notes) VALUES (?, ?, ?, ?)");
         $stmt->bind_param('isss', $userID, $date, $time, $notes);
     }
 
@@ -654,25 +763,30 @@ function handleGetBookings($input) {
     global $conn;
     $userID = intval($input['userID'] ?? 0);
 
-    // adapt select fields depending on whether service_id and status columns exist
-    $hasServiceCol = columnExists($conn, 'bookings', 'service_id');
+    // Check actual column names in bookings table
+    $hasServiceIDCol = columnExists($conn, 'bookings', 'serviceID');
+    $hasServiceIdCol = columnExists($conn, 'bookings', 'service_id');
     $hasStatusCol = columnExists($conn, 'bookings', 'status');
     
-    $selectFields = 'b.id, b.user_id, b.date, b.time, b.notes, u.name, u.email';
-    if ($hasServiceCol) $selectFields .= ', b.service_id, s.service_name';
+    // Determine correct column names (database uses userID and serviceID based on error)
+    $userIdCol = columnExists($conn, 'bookings', 'userID') ? 'userID' : 'user_id';
+    $serviceIdCol = $hasServiceIDCol ? 'serviceID' : ($hasServiceIdCol ? 'service_id' : 'serviceID');
+    
+    $selectFields = "b.id, b.{$userIdCol} as user_id, b.date, b.time, b.notes, u.name, u.email";
+    if ($hasServiceIDCol || $hasServiceIdCol) $selectFields .= ", b.{$serviceIdCol} as service_id, s.service_name";
     if ($hasStatusCol) $selectFields .= ', b.status';
 
     if ($userID) {
         $sql = "SELECT {$selectFields} FROM bookings b 
-                LEFT JOIN users u ON b.user_id = u.userID 
-                LEFT JOIN services s ON b.service_id = s.id 
-                WHERE b.user_id = ? ORDER BY b.date DESC, b.time DESC";
+                LEFT JOIN users u ON b.{$userIdCol} = u.userID 
+                LEFT JOIN services s ON b.{$serviceIdCol} = s.id 
+                WHERE b.{$userIdCol} = ? ORDER BY b.date DESC, b.time DESC";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('i', $userID);
     } else {
         $sql = "SELECT {$selectFields} FROM bookings b 
-                LEFT JOIN users u ON b.user_id = u.userID 
-                LEFT JOIN services s ON b.service_id = s.id 
+                LEFT JOIN users u ON b.{$userIdCol} = u.userID 
+                LEFT JOIN services s ON b.{$serviceIdCol} = s.id 
                 ORDER BY b.date DESC, b.time DESC";
         $stmt = $conn->prepare($sql);
     }
@@ -706,8 +820,11 @@ function handleUpdateBooking($input) {
         return;
     }
 
+    // Determine correct column name
+    $userIdCol = columnExists($conn, 'bookings', 'userID') ? 'userID' : 'user_id';
+
     // verify ownership
-    $check = $conn->prepare('SELECT user_id FROM bookings WHERE id = ?');
+    $check = $conn->prepare("SELECT {$userIdCol} as user_id FROM bookings WHERE id = ?");
     $check->bind_param('i', $bookingID);
     $check->execute();
     $res = $check->get_result();
@@ -756,8 +873,11 @@ function handleDeleteBooking($input) {
         return;
     }
 
+    // Determine correct column name
+    $userIdCol = columnExists($conn, 'bookings', 'userID') ? 'userID' : 'user_id';
+
     // verify ownership
-    $check = $conn->prepare('SELECT user_id FROM bookings WHERE id = ?');
+    $check = $conn->prepare("SELECT {$userIdCol} as user_id FROM bookings WHERE id = ?");
     $check->bind_param('i', $bookingID);
     $check->execute();
     $res = $check->get_result();
@@ -813,9 +933,14 @@ function handleAdminUpdateBooking($input) {
     if (isset($input['notes'])) { $fields[] = 'notes = ?'; $params[] = $input['notes']; $types .= 's'; }
     if (isset($input['status'])) { $fields[] = 'status = ?'; $params[] = $input['status']; $types .= 's'; }
 
-    // service_id optional depending on schema
-    if (columnExists($conn, 'bookings', 'service_id') && isset($input['service_id'])) {
-        $fields[] = 'service_id = ?'; $params[] = intval($input['service_id']); $types .= 'i';
+    // Check for correct service column name
+    $hasServiceID = columnExists($conn, 'bookings', 'serviceID');
+    $hasServiceId = columnExists($conn, 'bookings', 'service_id');
+    if (($hasServiceID || $hasServiceId) && isset($input['service_id'])) {
+        $serviceCol = $hasServiceID ? 'serviceID' : 'service_id';
+        $fields[] = "{$serviceCol} = ?"; 
+        $params[] = intval($input['service_id']); 
+        $types .= 'i';
     }
 
     if (empty($fields)) {
@@ -870,18 +995,25 @@ function handleGetServices($input) {
     global $conn;
     
     // Check if services table exists, create if not
-    if (!columnExists($conn, 'services', 'id')) {
+    $tableCheck = $conn->query("SHOW TABLES LIKE 'services'");
+    if ($tableCheck->num_rows === 0) {
         $conn->query("CREATE TABLE IF NOT EXISTS services (
             id INT AUTO_INCREMENT PRIMARY KEY,
             service_name VARCHAR(255) NOT NULL,
+            category VARCHAR(100) DEFAULT 'Hair',
             description TEXT,
             price DECIMAL(10, 2),
+            duration VARCHAR(50) DEFAULT '30 mins',
             image_url VARCHAR(500),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            icon VARCHAR(10) DEFAULT '💇',
+            is_active TINYINT(1) DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )");
     }
     
-    $stmt = $conn->prepare("SELECT id, service_name, description, price, image_url FROM services ORDER BY service_name ASC");
+    // Select all relevant columns from services table
+    $stmt = $conn->prepare("SELECT id, service_name, category, description, price, duration, image_url, icon, is_active, created_at, updated_at FROM services ORDER BY service_name ASC");
     $stmt->execute();
     $result = $stmt->get_result();
     $services = [];
@@ -901,9 +1033,13 @@ function handleCreateService($input) {
     global $conn;
     
     $service_name = trim($input['service_name'] ?? '');
+    $category = trim($input['category'] ?? 'Hair');
     $description = trim($input['description'] ?? '');
     $price = floatval($input['price'] ?? 0);
+    $duration = trim($input['duration'] ?? '30 mins');
     $image_url = trim($input['image_url'] ?? '');
+    $icon = trim($input['icon'] ?? '💇');
+    $is_active = intval($input['is_active'] ?? 1);
     
     if (!$service_name) {
         http_response_code(400);
@@ -911,8 +1047,8 @@ function handleCreateService($input) {
         return;
     }
     
-    $stmt = $conn->prepare("INSERT INTO services (service_name, description, price, image_url) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param('ssds', $service_name, $description, $price, $image_url);
+    $stmt = $conn->prepare("INSERT INTO services (service_name, category, description, price, duration, image_url, icon, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param('sssdsssi', $service_name, $category, $description, $price, $duration, $image_url, $icon, $is_active);
     
     if ($stmt->execute()) {
         http_response_code(201);
@@ -943,9 +1079,13 @@ function handleUpdateService($input) {
     $types = '';
     
     if (isset($input['service_name'])) { $fields[] = 'service_name = ?'; $params[] = $input['service_name']; $types .= 's'; }
+    if (isset($input['category'])) { $fields[] = 'category = ?'; $params[] = $input['category']; $types .= 's'; }
     if (isset($input['description'])) { $fields[] = 'description = ?'; $params[] = $input['description']; $types .= 's'; }
     if (isset($input['price'])) { $fields[] = 'price = ?'; $params[] = floatval($input['price']); $types .= 'd'; }
+    if (isset($input['duration'])) { $fields[] = 'duration = ?'; $params[] = $input['duration']; $types .= 's'; }
     if (isset($input['image_url'])) { $fields[] = 'image_url = ?'; $params[] = $input['image_url']; $types .= 's'; }
+    if (isset($input['icon'])) { $fields[] = 'icon = ?'; $params[] = $input['icon']; $types .= 's'; }
+    if (isset($input['is_active'])) { $fields[] = 'is_active = ?'; $params[] = intval($input['is_active']); $types .= 'i'; }
     
     if (empty($fields)) {
         http_response_code(400);

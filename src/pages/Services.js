@@ -1,180 +1,117 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axiosConfig';
+import { useToast } from '../components/ToastContainer';
 import './Services.css';
 
-// ===== SERVICES PAGE COMPONENT =====
-// This page displays all available salon services
-// Users can click on a service to see details in a modal and book it
-
 const Services = () => {
-  // Hook to navigate to different pages
   const navigate = useNavigate();
-
-  // Check if user is logged in
+  const { showSuccess, showError, showWarning } = useToast();
   const isLoggedIn = !!localStorage.getItem('token');
+  const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
 
-  // Get user data from localStorage
-  const user = localStorage.getItem('user') 
-    ? JSON.parse(localStorage.getItem('user')) 
-    : null;
-
-  // Show/hide service details modal
   const [showModal, setShowModal] = useState(false);
-
-  // Store selected service for modal display
   const [selectedService, setSelectedService] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [bookingData, setBookingData] = useState({ date: '', time: '', notes: '' });
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Store booking date and time
-  const [bookingData, setBookingData] = useState({
-    date: '',
-    time: '',
-    notes: '',
-  });
+  // Fetch services from database
+  useEffect(() => {
+    fetchServices();
+  }, []);
 
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const resp = await axios.post('', { action: 'getServices' });
+      console.log('Services API Response:', resp.data);
+      
+      if (resp.data && resp.data.success) {
+        const dbServices = resp.data.services || [];
+        console.log('Database services:', dbServices);
+        
+        // Map database services to UI format - show all active services
+        const mappedServices = dbServices
+          .filter(s => {
+            // Accept if is_active is 1, '1', true, or undefined (for backwards compatibility)
+            const isActive = s.is_active === 1 || s.is_active === '1' || s.is_active === true || s.is_active === undefined;
+            console.log(`Service ${s.service_name}: is_active=${s.is_active}, showing=${isActive}`);
+            return isActive;
+          })
+          .map(service => ({
+            id: service.id,
+            name: service.service_name,
+            category: service.category || 'Hair',
+            price: parseFloat(service.price),
+            duration: service.duration || '30 mins',
+            description: service.description,
+            image: service.image_url || 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&h=400&fit=crop',
+            rating: 4.8, // Default rating since it's not in DB
+            reviews: Math.floor(Math.random() * 200) + 20, // Random reviews for now
+          }));
+        
+        console.log('Mapped services to display:', mappedServices);
+        setServices(mappedServices);
+        
+        if (mappedServices.length === 0) {
+          showWarning('No active services found. Please add services in admin panel.');
+        }
+      } else {
+        console.error('API returned success=false:', resp.data);
+        showWarning('No services available');
+      }
+    } catch (err) {
+      console.error('Error fetching services:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      showError('Failed to load services: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const categories = ['All', 'Hair', 'Nails', 'Makeup', 'Skincare', 'Spa'];
   
-  const services = [
-    {
-      id: 1,
-      name: 'Basic Haircut',
-      category: 'Hair',
-      price: 300,
-      duration: '30 mins',
-      description: 'Professional haircut with basic styling',
-      icon: '✂️',
-    },
-    {
-      id: 2,
-      name: 'Hair Coloring',
-      category: 'Hair',
-      price: 750,
-      duration: '2 hours',
-      description: 'Full hair color with premium products',
-      icon: '🎨',
-    },
-    {
-      id: 3,
-      name: 'Hair Styling',
-      category: 'Hair',
-      price: 500,
-      duration: '1 hour',
-      description: 'Professional styling for special occasions',
-      icon: '💇‍♀️',
-    },
-    {
-      id: 4,
-      name: 'Manicure',
-      category: 'Nails',
-      price: 1000,
-      duration: '45 mins',
-      description: 'Professional manicure with nail art options',
-      icon: '💅',
-    },
-    {
-      id: 5,
-      name: 'Pedicure',
-      category: 'Nails',
-      price: 2500,
-      duration: '1 hour',
-      description: 'Relaxing pedicure with spa treatment',
-      icon: '👣',
-    },
-    {
-      id: 6,
-      name: 'Nail Art Design',
-      category: 'Nails',
-      price: 2500,
-      duration: '1 hour',
-      description: 'Custom nail art design with premium finishes',
-      icon: '✨',
-    },
-    {
-      id: 7,
-      name: 'Makeup Application',
-      category: 'Makeup',
-      price: 4000,
-      duration: '1 hour',
-      description: 'Professional makeup for any occasion',
-      icon: '💄',
-    },
-    {
-      id: 8,
-      name: 'Bridal Makeup',
-      category: 'Makeup',
-      price: 12000,
-      duration: '2 hours',
-      description: 'Complete bridal makeup package with trials',
-      icon: '👰',
-    },
-    {
-      id: 9,
-      name: 'Facial Treatment',
-      category: 'Facials',
-      price: 5500,
-      duration: '1 hour',
-      description: 'Professional facial with premium skincare',
-      icon: '🧖‍♀️',
-    },
-    {
-      id: 10,
-      name: 'Deep Cleansing Facial',
-      category: 'Facials',
-      price: 3000,
-      duration: '1.5 hours',
-      description: 'Deep cleanse with extractions and mask',
-      icon: '✨',
-    },
-    {
-      id: 11,
-      name: 'Full Body Massage',
-      category: 'Massage',
-      price: 6000,
-      duration: '1 hour',
-      description: 'Relaxing full body massage with oils',
-      icon: '💆‍♂️',
-    },
-    {
-      id: 12,
-      name: 'Head & Neck Massage',
-      category: 'Massage',
-      price: 1500,
-      duration: '45 mins',
-      description: 'Therapeutic head and neck massage',
-      icon: '🧘‍♀️',
-    },
-  ];
+  const filteredServices = activeCategory === 'All' 
+    ? services 
+    : services.filter(s => s.category === activeCategory);
 
-  // ===== HANDLE SERVICE CLICK =====
-  // When user clicks on a service, open modal with details
   const handleServiceClick = (service) => {
-    if (!isLoggedIn) {
-      // If not logged in, redirect to login
+    // Allow both regular users and admin users to book
+    const hasToken = !!localStorage.getItem('token') || !!localStorage.getItem('adminToken');
+    if (!hasToken) {
       navigate('/auth');
       return;
     }
-    // Show modal with service details
     setSelectedService(service);
     setShowModal(true);
   };
 
-  // ===== HANDLE BOOKING =====
-  // When user clicks book in modal, save booking to localStorage
   const handleBooking = async () => {
     if (!bookingData.date || !bookingData.time) {
-      alert('Please select both date and time');
+      showWarning('Please select both date and time');
       return;
     }
-    // call backend API to create booking
+
     try {
-      const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
-      if (!user || !user.userID) {
-        alert('User not identified. Please login again.');
+      // Support both regular users and admin users
+      let userId = null;
+      if (user && user.userID) {
+        userId = user.userID;
+      } else if (user && user.id) {
+        // Admin users have 'id' instead of 'userID'
+        userId = user.id;
+      }
+
+      if (!userId) {
+        showError('Please login again to continue');
         return;
       }
 
       const payload = {
         action: 'createBooking',
-        userID: user.userID,
+        userID: userId,
         serviceId: selectedService.id,
         date: bookingData.date,
         time: bookingData.time,
@@ -183,176 +120,233 @@ const Services = () => {
 
       const resp = await axios.post('', payload);
       if (resp.data && resp.data.success) {
-        alert(`✅ Booking confirmed! Service: ${selectedService.name} on ${bookingData.date} at ${bookingData.time}`);
+        showSuccess(`Booking confirmed for ${selectedService.name}!`);
         setShowModal(false);
         setBookingData({ date: '', time: '', notes: '' });
         setSelectedService(null);
       } else {
-        console.error('Booking API error response:', resp.data);
-        alert('Error creating booking: ' + (resp.data?.message || 'Unknown'));
+        showError(resp.data?.message || 'Failed to create booking');
       }
     } catch (err) {
-      console.error('Booking request failed', err.response?.data || err.message || err);
-      const serverMsg = err.response?.data?.message;
-      alert('Network or server error while creating booking' + (serverMsg ? (': ' + serverMsg) : ''));
+      showError('Network error. Please try again.');
     }
   };
 
-  // ===== GET AVAILABLE TIMES =====
-  // Generate time slots for the day
   const generateTimeSlots = () => {
     const times = [];
-    for (let i = 10; i < 18; i++) {
+    for (let i = 9; i <= 20; i++) {
       times.push(`${i.toString().padStart(2, '0')}:00`);
-      times.push(`${i.toString().padStart(2, '0')}:30`);
+      if (i < 20) times.push(`${i.toString().padStart(2, '0')}:30`);
     }
     return times;
   };
 
-  const timeSlots = generateTimeSlots();
-
   return (
     <div className="services-page">
-      {/* Header section */}
-      <div className="services-header">
-        <h1>Our Services</h1>
-        <p>Discover our complete range of professional salon services</p>
+      {/* Hero Header */}
+      <div className="services-hero">
+        <div className="services-hero-overlay"></div>
+        <div className="services-hero-content">
+          <span className="services-hero-badge">Premium Services</span>
+          <h1>Our Services</h1>
+          <p>Discover our premium range of beauty and wellness services tailored just for you</p>
+        </div>
       </div>
 
-      {/* Services grid */}
-      <div className="services-container">
-        <div className="services-grid">
-          {services.map((service) => (
-            <div 
-              key={service.id} 
-              className="service-item"
-              onClick={() => handleServiceClick(service)}
+      {/* Category Filter */}
+      <div className="category-filter-section">
+        <div className="category-container">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              className={`category-btn ${activeCategory === cat ? 'active' : ''}`}
+              onClick={() => setActiveCategory(cat)}
             >
-              <div className="service-icon-large">{service.icon}</div>
-              <h3>{service.name}</h3>
-              <p className="service-category">{service.category}</p>
-              <p className="service-description">{service.description}</p>
-              <div className="service-details">
-                <span className="service-price">Rs {service.price}</span>
-                <span className="service-duration">{service.duration}</span>
-              </div>
-              <button className="book-btn">Book Now</button>
-            </div>
+              {cat === 'All' && '✨'} 
+              {cat === 'Hair' && '💇‍♀️'} 
+              {cat === 'Nails' && '💅'} 
+              {cat === 'Makeup' && '💄'} 
+              {cat === 'Skincare' && '🧴'} 
+              {cat === 'Spa' && '🧖‍♀️'} 
+              <span>{cat}</span>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Service Details Modal */}
+      {/* Services Grid */}
+      <div className="services-container">
+        {loading ? (
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Loading services...</p>
+          </div>
+        ) : filteredServices.length === 0 ? (
+          <div className="no-services">
+            <p>No services available in this category</p>
+          </div>
+        ) : (
+          <div className="services-grid">
+          {filteredServices.map((service) => (
+            <div key={service.id} className="service-card">
+              {/* Service Image */}
+              <div className="service-image-wrapper">
+                <img 
+                  src={service.image} 
+                  alt={service.name}
+                  className="service-image"
+                  loading="lazy"
+                />
+                <div className="service-category-tag">{service.category}</div>
+                {service.rating >= 4.9 && (
+                  <div className="service-popular-tag">⭐ Popular</div>
+                )}
+              </div>
+
+              {/* Service Content */}
+              <div className="service-content">
+                <div className="service-header">
+                  <h3 className="service-name">{service.name}</h3>
+                  <div className="service-rating">
+                    <span className="rating-star">★</span>
+                    <span className="rating-value">{service.rating}</span>
+                    <span className="rating-count">({service.reviews})</span>
+                  </div>
+                </div>
+
+                <p className="service-description">{service.description}</p>
+
+                <div className="service-meta">
+                  <div className="meta-item">
+                    <span className="meta-icon">⏱️</span>
+                    <span>{service.duration}</span>
+                  </div>
+                  <div className="meta-item">
+                    <span className="meta-icon">📍</span>
+                    <span>In-Salon</span>
+                  </div>
+                </div>
+
+                <div className="service-footer">
+                  <div className="service-price">
+                    <span className="price-label">Starting from</span>
+                    <span className="price-value">Rs {service.price.toLocaleString()}</span>
+                  </div>
+                  <button 
+                    className="book-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleServiceClick(service);
+                    }}
+                  >
+                    Book Now
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        )}
+      </div>
+
+      {/* Booking Modal */}
       {showModal && selectedService && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            {/* Close button */}
-            <button 
-              className="modal-close"
-              onClick={() => setShowModal(false)}
-            >
-              ✕
-            </button>
-
-            {/* Modal header */}
-            <div className="modal-header">
-              <div className="modal-icon">{selectedService.icon}</div>
-              <h2>{selectedService.name}</h2>
-              <p className="modal-category">{selectedService.category}</p>
+          <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setShowModal(false)}>×</button>
+            
+            <div className="modal-image-section">
+              <img src={selectedService.image} alt={selectedService.name} />
+              <div className="modal-image-overlay">
+                <span className="modal-category-badge">{selectedService.category}</span>
+              </div>
             </div>
 
-            {/* Modal body */}
-            <div className="modal-body">
-              <div className="service-info">
-                <div className="info-row">
-                  <span className="info-label">Description:</span>
-                  <span className="info-value">{selectedService.description}</span>
-                </div>
-                <div className="info-row">
-                  <span className="info-label">Duration:</span>
-                  <span className="info-value">{selectedService.duration}</span>
-                </div>
-                <div className="info-row">
-                  <span className="info-label">Price:</span>
-                  <span className="info-value price">Rs {selectedService.price}</span>
+            <div className="modal-content-section">
+              <div className="modal-header">
+                <h2>{selectedService.name}</h2>
+                <div className="modal-rating">
+                  <span className="star">★</span> 
+                  <span>{selectedService.rating}</span>
+                  <span className="reviews">({selectedService.reviews} reviews)</span>
                 </div>
               </div>
 
-              {/* Booking form */}
-              <div className="booking-form">
-                <h3>Select Date & Time</h3>
+              <p className="modal-description">{selectedService.description}</p>
+
+              <div className="modal-details-grid">
+                <div className="detail-card">
+                  <span className="detail-icon">⏱️</span>
+                  <span className="detail-label">Duration</span>
+                  <span className="detail-value">{selectedService.duration}</span>
+                </div>
+                <div className="detail-card">
+                  <span className="detail-icon">📍</span>
+                  <span className="detail-label">Location</span>
+                  <span className="detail-value">In-Salon</span>
+                </div>
+                <div className="detail-card highlight">
+                  <span className="detail-icon">💰</span>
+                  <span className="detail-label">Price</span>
+                  <span className="detail-value">Rs {selectedService.price.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="booking-form-section">
+                <h3>📅 Schedule Your Appointment</h3>
                 
-                {/* Date input */}
-                <div className="form-group">
-                  <label htmlFor="booking-date">Date:</label>
-                  <input
-                    type="date"
-                    id="booking-date"
-                    value={bookingData.date}
-                    onChange={(e) => setBookingData({
-                      ...bookingData,
-                      date: e.target.value
-                    })}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Select Date</label>
+                    <input
+                      type="date"
+                      value={bookingData.date}
+                      onChange={(e) => setBookingData({...bookingData, date: e.target.value})}
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Select Time</label>
+                    <select
+                      value={bookingData.time}
+                      onChange={(e) => setBookingData({...bookingData, time: e.target.value})}
+                    >
+                      <option value="">Choose a time slot</option>
+                      {generateTimeSlots().map((time) => (
+                        <option key={time} value={time}>{time}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                {/* Time input */}
-                <div className="form-group">
-                  <label htmlFor="booking-time">Time:</label>
-                  <select
-                    id="booking-time"
-                    value={bookingData.time}
-                    onChange={(e) => setBookingData({
-                      ...bookingData,
-                      time: e.target.value
-                    })}
-                  >
-                    <option value="">-- Select Time --</option>
-                    {timeSlots.map((time) => (
-                      <option key={time} value={time}>
-                        {time}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Notes input */}
-                <div className="form-group">
-                  <label htmlFor="booking-notes">Notes (optional):</label>
+                <div className="form-group full-width">
+                  <label>Special Requests (Optional)</label>
                   <textarea
-                    id="booking-notes"
-                    placeholder="Any preferences or notes for your appointment"
+                    placeholder="Any specific preferences or requirements..."
                     value={bookingData.notes}
-                    onChange={(e) => setBookingData({ ...bookingData, notes: e.target.value })}
+                    onChange={(e) => setBookingData({...bookingData, notes: e.target.value})}
                     rows={3}
                   />
                 </div>
+              </div>
 
-                {/* User info preview */}
-                <div className="user-info">
-                  <p><strong>Booking for:</strong> {user?.name}</p>
-                  <p><strong>Email:</strong> {user?.email}</p>
-                  {bookingData.notes && (
-                    <p><strong>Notes:</strong> {bookingData.notes}</p>
-                  )}
+              <div className="booking-summary">
+                <div className="summary-item">
+                  <span>Service</span>
+                  <span>{selectedService.name}</span>
+                </div>
+                <div className="summary-item">
+                  <span>Duration</span>
+                  <span>{selectedService.duration}</span>
+                </div>
+                <div className="summary-item total">
+                  <span>Total Amount</span>
+                  <span>Rs {selectedService.price.toLocaleString()}</span>
                 </div>
               </div>
-            </div>
 
-            {/* Modal footer */}
-            <div className="modal-footer">
-              <button 
-                className="cancel-btn"
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="confirm-btn"
-                onClick={handleBooking}
-              >
-                ✓ Confirm Booking
+              <button className="confirm-btn" onClick={handleBooking}>
+                Confirm Booking
               </button>
             </div>
           </div>

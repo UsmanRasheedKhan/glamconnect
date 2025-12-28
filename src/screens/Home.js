@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
+import { useToast } from '../components/ToastContainer';
 
 // ========== HOME COMPONENT ==========
 // This component is like the welcome page after user logs in
@@ -10,6 +11,8 @@ import './Home.css';
 const Home = () => {
   // ===== STATE VARIABLES (Data storage) =====
   // These variables store information that can change
+  
+  const { showSuccess, showInfo } = useToast();
   
   // Stores the logged-in user's information
   const [user, setUser] = useState(null);
@@ -115,14 +118,14 @@ const Home = () => {
       localStorage.setItem('bookings', JSON.stringify(updatedBookings));
       
       // Show success message
-      alert('Booking cancelled successfully');
+      showSuccess('Booking cancelled successfully');
     }
   };
 
   // ===== EDIT PROFILE HANDLER =====
   // This function will be used for editing profile later
   const handleEditProfile = () => {
-    alert('Edit profile feature coming soon!');
+    showInfo('Edit profile feature coming soon!');
   };
 
   // ===== RENDER: What user sees on screen =====

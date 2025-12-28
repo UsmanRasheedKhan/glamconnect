@@ -75,8 +75,8 @@ const Navbar = () => {
       {/* Middle - Navigation links */}
         <div className={`navbar-links ${showMobileMenu ? 'active' : ''}`}>
         <Link 
-          to="/home" 
-          className={`nav-link ${(location.pathname === '/home' || location.pathname === '/') ? 'active' : ''}`}
+          to="/" 
+          className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
           onClick={() => setShowMobileMenu(false)}
         >
           Home
@@ -130,10 +130,27 @@ const Navbar = () => {
             {showDropdown && (
               <div className="dropdown-menu">
                 <div className="dropdown-header">
-                  <p className="user-name">{user?.name}</p>
+                  <p className="user-name">{user?.name || user?.full_name}</p>
                   <p className="user-email">{user?.email}</p>
                 </div>
                 <hr className="dropdown-divider" />
+                {/* Show Dashboard link for admin/staff users */}
+                {(user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'staff') && (
+                  <button 
+                    className="dropdown-item"
+                    onClick={() => {
+                      if (user.role === 'staff') {
+                        navigate('/staff');
+                      } else {
+                        navigate('/admin');
+                      }
+                      setShowDropdown(false);
+                      setShowMobileMenu(false);
+                    }}
+                  >
+                    📊 Dashboard
+                  </button>
+                )}
                 <button 
                   className="dropdown-item"
                   onClick={handleProfileClick}

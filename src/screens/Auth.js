@@ -5,6 +5,7 @@ import { signup } from '../api/authService';
 import { auth, sendVerificationToUser, sendPasswordReset, firebaseConfig } from '../firebase';
 import { createUserWithEmailAndPassword, signOut, signInWithEmailAndPassword } from 'firebase/auth';
 import axios from '../api/axiosConfig';
+import { useToast } from '../components/ToastContainer';
 
 // ========== AUTH COMPONENT ==========
 // This component handles all authentication: Login, Signup, and Forgot Password
@@ -12,6 +13,9 @@ import axios from '../api/axiosConfig';
 
 const Auth = () => {
   // ===== STATE VARIABLES (Data that can change) =====
+  
+  // Toast notifications
+  const { showSuccess, showError, showInfo } = useToast();
   
   // Which form tab is currently showing (login, signup, or forgot)
   const [activeTab, setActiveTab] = useState('login');
@@ -138,7 +142,7 @@ const Auth = () => {
           }
 
           localStorage.setItem('user', JSON.stringify(resp.data.user));
-          alert('Login successful!');
+          showSuccess('Login successful!');
           navigate('/home');
         } else {
           console.error('Backend getUserByEmail response:', resp.data);
@@ -171,7 +175,7 @@ const Auth = () => {
         try {
           const resp = await axios.post('', { action: 'applyOobCode', oobCode, apiKey: firebaseConfig.apiKey });
           if (resp.data && resp.data.success) {
-            alert('Email verified successfully. You may now log in.');
+            showSuccess('Email verified successfully. You may now log in.');
             // Clean up URL so user doesn't re-run the action
             const clean = window.location.pathname + (window.location.hash || '');
             window.history.replaceState({}, document.title, clean);
@@ -253,9 +257,9 @@ const Auth = () => {
 
       // Inform user to verify
       if (sendResp.success) {
-        alert('Signup created. A verification email was sent to your address. Please verify your email before logging in.');
+        showInfo('Signup created. A verification email was sent to your address. Please verify your email before logging in.');
       } else {
-        alert('Signup created but verification email could not be sent automatically. Please check your email or use the verification link provided by Firebase.');
+        showInfo('Signup created but verification email could not be sent automatically. Please check your email or use the verification link provided by Firebase.');
       }
 
       // Clear sensitive fields but keep email/name for convenience
@@ -285,9 +289,9 @@ const Auth = () => {
     try {
       const r = await sendVerificationToUser(unverifiedUser);
       if (r.success) {
-        alert('Verification email resent. Please check your inbox.');
+        showSuccess('Verification email resent. Please check your inbox.');
       } else {
-        alert('Could not resend verification email automatically. Please check your email provider.');
+        showError('Could not resend verification email automatically. Please check your email provider.');
       }
     } catch (err) {
       console.error('Resend verification error', err);
@@ -329,7 +333,7 @@ const Auth = () => {
     try {
       const r = await sendPasswordReset(formData.email);
       if (r.success) {
-        alert('Password reset email sent. Please check your inbox.');
+        showSuccess('Password reset email sent. Please check your inbox.');
         setActiveTab('login');
       } else {
         setErrors({ api: r.message || 'Failed to send reset email' });
